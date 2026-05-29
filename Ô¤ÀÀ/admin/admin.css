@@ -1,0 +1,103 @@
+:root {
+  --admin-primary: #1677ff;
+  --admin-danger: #ff4d4f;
+  --admin-export: #52c41a;
+  --admin-bg: #f0f2f5;
+  --admin-sider: #001529;
+  --admin-header-h: 56px;
+  --admin-sider-w: 220px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--admin-bg); }
+.loading { padding: 48px; text-align: center; color: #999; }
+#app { min-height: 100vh; }
+
+.admin-root { min-height: 100vh; display: flex; flex-direction: column; }
+.demo-bar {
+  display: flex; align-items: center; gap: 12px; padding: 8px 20px;
+  background: #e6f4ff; border-bottom: 1px solid #91caff; font-size: 13px; color: #0958d9;
+}
+.demo-bar b { font-weight: 700; }
+.demo-bar span.tip { flex: 1; }
+.top-header {
+  height: var(--admin-header-h); display: flex; align-items: center; padding: 0 20px;
+  background: #fff; border-bottom: 1px solid #e8e8e8;
+}
+.logo-box {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.logo-box img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.system-name { font-weight: 600; font-size: 16px; margin-left: 10px; }
+.header-flex { flex: 1; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.account { font-size: 14px; color: #595959; }
+
+.admin-body { display: flex; flex: 1; min-height: 0; }
+.side-nav {
+  width: var(--admin-sider-w); background: var(--admin-sider); flex-shrink: 0;
+  display: flex; flex-direction: column;
+}
+.side-nav .el-menu { border-right: none; }
+.side-nav .el-menu-item.is-active { background: var(--admin-primary) !important; }
+.collapse-btn {
+  height: 40px; border: none; background: #002140; color: rgba(255,255,255,.65); cursor: pointer;
+}
+.main-content { flex: 1; overflow: auto; padding: 16px 20px 24px; }
+.breadcrumb { margin-bottom: 12px; }
+.page-card {
+  background: #fff; border-radius: 8px; padding: 20px; min-height: 400px;
+}
+.page-title { font-size: 18px; font-weight: 600; margin: 0 0 16px; }
+
+.filter-bar {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+  margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0;
+}
+.toolbar-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+.batch-group {
+  padding: 10px 12px; background: #fafafa; border: 1px dashed #d9d9d9; border-radius: 6px;
+}
+.batch-group::before { content: '批量操作'; font-size: 12px; color: #8c8c8c; margin-right: 8px; }
+.shortcut-group {
+  padding: 10px 12px; background: linear-gradient(90deg, #fff7e6, #fff);
+  border: 1px solid #ffd591; border-radius: 6px;
+}
+.shortcut-group::before { content: '快捷操作'; font-size: 12px; color: #d46b08; margin-right: 8px; font-weight: 600; }
+.perm-hint { margin-left: auto; font-size: 12px; color: #8c8c8c; }
+
+.btn-export { --el-button-bg-color: #52c41a; --el-button-border-color: #52c41a; --el-button-text-color: #fff; }
+.btn-alert {
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  50% { box-shadow: 0 0 0 6px rgba(255,77,79,.25); }
+}
+
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+@media (max-width: 1200px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
+.stat-card { text-align: center; padding: 16px; background: #fafafa; border-radius: 8px; }
+.stat-value { font-size: 28px; font-weight: 700; color: var(--admin-primary); }
+
+.user-detail-section { margin-bottom: 22px; }
+.user-detail-title {
+  margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #1e293b;
+  padding-left: 8px; border-left: 3px solid var(--admin-primary);
+}
+.page-desc {
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.65;
+}
+.chart-box {
+  height: 200px; background: linear-gradient(180deg, #f5f9ff, #fff);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #bfbfbf;
+}
+.dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+
+.alert-dot {
+  display: inline-block; width: 6px; height: 6px; background: #ff4d4f;
+  border-radius: 50%; margin-right: 6px; vertical-align: middle;
+}

@@ -1,0 +1,92 @@
+:root {
+  --admin-primary: #1677ff;
+  --admin-danger: #ff4d4f;
+  --admin-export: #52c41a;
+  --admin-bg: #f0f2f5;
+  --admin-sider: #ffffff;
+  --admin-sider-active: #1677ff;
+  --admin-header-h: 56px;
+  --admin-sider-w: 248px;
+  --admin-sider-collapsed: 72px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  background: var(--admin-bg);
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  min-height: calc(100vh - var(--admin-header-h) - 48px);
+}
+
+.page-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.toolbar-row.batch-group {
+  padding: 10px 12px;
+  background: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+}
+
+.toolbar-row.batch-group::before {
+  content: '批量操作';
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-right: 8px;
+}
+
+.toolbar-row.shortcut-group {
+  padding: 10px 12px;
+  background: linear-gradient(90deg, #fff7e6, #fff);
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+}
+
+.toolbar-row.shortcut-group::before {
+  content: '快捷操作';
+  font-size: 12px;
+  color: #d46b08;
+  margin-right: 8px;
+  font-weight: 600;
+}
+
+.layout-hint {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-left: auto;
+}

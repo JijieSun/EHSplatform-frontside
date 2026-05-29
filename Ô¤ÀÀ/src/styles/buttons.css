@@ -1,0 +1,41 @@
+/* 通用标准按钮规范 */
+.btn-primary-custom.el-button--primary {
+  --el-button-bg-color: var(--admin-primary);
+  --el-button-border-color: var(--admin-primary);
+}
+
+.btn-secondary-custom.el-button {
+  --el-button-bg-color: #f5f5f5;
+  --el-button-border-color: #d9d9d9;
+  --el-button-text-color: #595959;
+}
+
+.btn-danger-custom.el-button--danger {
+  --el-button-bg-color: var(--admin-danger);
+  --el-button-border-color: var(--admin-danger);
+}
+
+.btn-export-custom.el-button {
+  --el-button-bg-color: var(--admin-export);
+  --el-button-border-color: var(--admin-export);
+  --el-button-text-color: #fff;
+  --el-button-hover-bg-color: #73d13d;
+  --el-button-hover-border-color: #73d13d;
+}
+
+.btn-alert-highlight.el-button {
+  --el-button-bg-color: #ff4d4f;
+  --el-button-border-color: #ff4d4f;
+  animation: pulse-alert 2s infinite;
+  font-weight: 600;
+}
+
+@keyframes pulse-alert {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 77, 79, 0);
+  }
+}
