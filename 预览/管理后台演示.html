@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能陪伴机器人管理后台</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f0f2f5;color:#1a1a1a;font-size:14px}
+a{color:#1677ff;text-decoration:none}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:10px;padding:8px 16px;background:#e6f4ff;border-bottom:1px solid #91caff;font-size:13px;color:#0958d9}
+.bar b{font-weight:700}.bar span{flex:1}
+.bar button{border:none;background:transparent;color:#1677ff;cursor:pointer;font-size:13px}
+.header{height:56px;background:#fff;border-bottom:1px solid #e8e8e8;display:flex;align-items:center;padding:0 20px;gap:12px}
+.logo{width:32px;height:32px;border-radius:8px;object-fit:contain;flex-shrink:0}
+.header h1{font-size:16px;font-weight:600;flex:1}
+.header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.header-actions button,.header-actions select{font-size:13px;padding:6px 10px;border:1px solid #d9d9d9;border-radius:4px;background:#fff;cursor:pointer}
+.header-actions .logout{color:#ff4d4f;border:none;background:transparent}
+.body{display:flex;flex:1;min-height:calc(100vh - 56px)}
+/* ===== 侧栏导航（新设计） ===== */
+.sidebar{
+  width:248px;background:#fff;border-right:1px solid #e8ecf1;
+  flex-shrink:0;display:flex;flex-direction:column;
+  box-shadow:4px 0 24px rgba(15,23,42,.04);
+  transition:width .25s ease;overflow:hidden
+}
+.sidebar.collapsed{width:72px}
+.sidebar-brand{
+  padding:18px 16px 14px;border-bottom:1px solid #f1f5f9;
+  display:flex;align-items:center;gap:10px;flex-shrink:0
+}
+.sidebar-brand .brand-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;object-fit:contain
+}
+.sidebar-brand .brand-text{font-size:13px;font-weight:600;color:#1e293b;line-height:1.3}
+.sidebar-brand .brand-text small{display:block;font-size:11px;font-weight:400;color:#94a3b8;margin-top:2px}
+.sidebar.collapsed .brand-text{display:none}
+.nav-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 8px 16px}
+.nav-scroll::-webkit-scrollbar{width:4px}
+.nav-scroll::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
+.nav-group-label{
+  font-size:11px;font-weight:600;color:#94a3b8;
+  padding:14px 12px 6px;letter-spacing:.06em
+}
+.sidebar.collapsed .nav-group-label{display:none}
+.nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:9px 10px;margin-bottom:2px;border:none;background:transparent;
+  border-radius:10px;cursor:pointer;text-align:left;
+  font-size:14px;color:#475569;transition:all .18s ease;position:relative
+}
+.nav-item:hover{background:#f8fafc;color:#1e293b}
+.nav-item.active{
+  background:linear-gradient(90deg,#eff6ff,#f8fbff);
+  color:#1677ff;font-weight:600
+}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:20px;background:#1677ff;border-radius:0 3px 3px 0
+}
+.nav-icon{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;
+  background:#f1f5f9;display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:background .18s
+}
+.nav-item:hover .nav-icon{background:#e2e8f0}
+.nav-item.active .nav-icon{background:#dbeafe}
+.nav-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-arrow{display:none}
+.nav-arrow{
+  font-size:10px;color:#94a3b8;transition:transform .25s ease;flex-shrink:0;
+  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  border-radius:4px
+}
+.nav-item:hover .nav-arrow{color:#64748b}
+.nav-arrow.open{transform:rotate(180deg)}
+.sub-list{
+  max-height:0;overflow:hidden;transition:max-height .3s ease;
+  margin-left:16px;padding-left:14px;border-left:2px solid #e2e8f0;
+  margin-bottom:4px
+}
+.sub-list.open{max-height:600px}
+.sub-item{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:8px 10px;margin:2px 0;border:none;background:transparent;
+  border-radius:8px;cursor:pointer;text-align:left;
+  font-size:13px;color:#64748b;transition:all .15s
+}
+.sub-item:hover{background:#f8fafc;color:#334155}
+.sub-item.active{background:#eff6ff;color:#1677ff;font-weight:600}
+.sub-dot{width:6px;height:6px;border-radius:50%;background:#cbd5e1;flex-shrink:0}
+.sub-item.active .sub-dot{background:#1677ff;box-shadow:0 0 0 3px rgba(22,119,255,.2)}
+.sub-item.alert-item .sub-dot{background:#ff4d4f;box-shadow:0 0 0 3px rgba(255,77,79,.2)}
+.sub-badge{
+  margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;
+  background:#fff1f0;color:#ff4d4f;font-weight:600
+}
+.sidebar-footer{
+  padding:10px 12px;border-top:1px solid #f1f5f9;flex-shrink:0
+}
+.collapse-side{
+  width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;
+  background:#f8fafc;color:#64748b;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .15s
+}
+.collapse-side:hover{background:#f1f5f9;color:#1677ff;border-color:#bfdbfe}
+.sidebar.collapsed .collapse-side span{display:none}
+.main{flex:1;padding:16px 20px;overflow:auto}
+.breadcrumb{color:#8c8c8c;margin-bottom:12px;font-size:13px}
+.breadcrumb span{cursor:pointer}.breadcrumb span:hover{color:#1677ff}
+.card{background:#fff;border-radius:8px;padding:20px;margin-bottom:16px}
+.card h2{font-size:18px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#fafafa;border-radius:8px;padding:16px;text-align:center}
+.stat .num{font-size:28px;font-weight:700;color:#1677ff;margin-top:8px}
+.filter{display:flex;flex-wrap:wrap;gap:10px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #f0f0f0;align-items:center}
+.filter input,.filter select{padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px;font-size:14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.toolbar .hint{margin-left:auto;font-size:12px;color:#8c8c8c}
+.toolbar.batch,.toolbar.short{background:#fafafa;border:1px dashed #d9d9d9;border-radius:6px;padding:10px 12px}
+.toolbar.short{background:linear-gradient(90deg,#fff7e6,#fff);border-color:#ffd591}
+.toolbar.batch::before{content:"批量操作 ";font-size:12px;color:#8c8c8c}
+.toolbar.short::before{content:"快捷操作 ";font-size:12px;color:#d46b08;font-weight:600}
+.btn{padding:8px 16px;border-radius:4px;border:1px solid #d9d9d9;background:#f5f5f5;cursor:pointer;font-size:14px}
+.btn-primary{background:#1677ff;color:#fff;border-color:#1677ff}
+.btn-danger{background:#ff4d4f;color:#fff;border-color:#ff4d4f}
+.btn-export{background:#52c41a;color:#fff;border-color:#52c41a}
+.btn-alert{animation:pulse 2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(255,77,79,.3)}}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border:1px solid #f0f0f0;padding:10px 12px;text-align:left}
+th{background:#fafafa;font-weight:600}
+tr:nth-child(even){background:#fafafa}
+.link-btn{border:none;background:none;color:#1677ff;cursor:pointer;margin-right:8px;font-size:13px}
+.link-danger{color:#ff4d4f}
+.pager{margin-top:16px;text-align:right;color:#8c8c8c;font-size:13px}
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+@media(max-width:900px){.dash-grid{grid-template-columns:1fr}}
+.chart{height:180px;background:linear-gradient(180deg,#f5f9ff,#fff);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#bfbfbf}
+.alert-list li{padding:8px 0;border-bottom:1px solid #f0f0f0;list-style:none;font-size:14px}
+.alert-list .danger{color:#ff4d4f}
+.alert-list .warn{color:#fa8c16}
+.form-row{margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.form-row label{width:140px;color:#595959}
+.form-row input{flex:1;max-width:360px;padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px}
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-mask.show{display:flex}
+.modal{background:#fff;border-radius:8px;width:480px;max-width:90%}
+.modal.edit-modal{width:min(760px,96%);max-height:92vh;display:flex;flex-direction:column}
+.modal.edit-modal .modal-bd{flex:1;overflow-y:auto;max-height:calc(92vh - 110px)}
+.edit-sec{margin-bottom:18px}
+.edit-sec h4{margin:0 0 10px;font-size:14px;font-weight:600;color:#1e293b;padding-left:8px;border-left:3px solid #1677ff}
+.edit-sub{margin-bottom:8px;padding:10px;background:#fafafa;border-radius:6px}
+.edit-contact{margin-bottom:12px;padding:12px;border:1px solid #f0f0f0;border-radius:8px;background:#fafafa}
+.edit-contact .ct-label{font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:8px}
+.edit-grid .form-row{margin:0;flex-direction:column;align-items:stretch;gap:4px}
+.edit-grid .form-row label{width:auto;font-size:12px;color:#8c8c8c}
+.edit-grid .form-row input,.edit-grid .form-row select{max-width:none;width:100%}
+.form-row-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.form-row-inline label{font-size:12px;color:#595959}
+.device-muted{color:#94a3b8}
+.modal-hd{padding:16px 20px;border-bottom:1px solid #f0f0f0;font-weight:600;display:flex;justify-content:space-between}
+.modal-bd{padding:20px}
+.modal-ft{padding:12px 20px;border-top:1px solid #f0f0f0;text-align:right;display:flex;gap:8px;justify-content:flex-end}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:4px;z-index:2000;display:none;font-size:14px}
+.toast.show{display:block}
+.dot{display:inline-block;width:6px;height:6px;background:#ff4d4f;border-radius:50%;margin-right:6px}
+.hidden{display:none!important}
+.msg-menu{position:absolute;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid #e8e8e8;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:280px;z-index:200;padding:6px 0}
+.msg-menu-item{display:block;width:100%;text-align:left;border:none;background:none;padding:10px 14px;cursor:pointer;font-size:13px}
+.msg-menu-item:hover{background:#f5f5f5}
+.msg-menu-item b{display:block;margin-bottom:4px}
+.msg-menu-item small{color:#8c8c8c;font-size:12px}
+.perm-tags{display:flex;flex-wrap:wrap;gap:4px}
+.perm-tag{font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid #d9d9d9}
+.perm-tag.on{background:#1677ff;color:#fff;border-color:#1677ff}
+.essence-full{white-space:pre-wrap;line-height:1.75;max-height:none}
+.essence-clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.sidebar.collapsed .sub-list{display:none}
+.sidebar.collapsed .nav-item{justify-content:center;padding:9px 6px}
+.sidebar.collapsed .nav-icon{margin:0}
+.user-link{border:none;background:none;color:#1677ff;cursor:pointer;font-size:14px;padding:0}
+.user-link:hover{text-decoration:underline}
+.drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;display:none}
+.drawer-mask.show{display:flex;justify-content:flex-end}
+.drawer-panel{width:min(560px,100%);height:100%;background:#fff;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,.12);animation:slideIn .25s ease}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.drawer-hd{padding:16px 20px;border-bottom:1px solid #f0f0f0;font-weight:600;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.drawer-bd{padding:16px 20px 32px}
+.detail-sec{margin-bottom:22px}
+.detail-sec h4{margin:0 0 10px;font-size:14px;font-weight:600;color:#1e293b;padding-left:8px;border-left:3px solid #1677ff}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:13px;margin-bottom:8px}
+.detail-grid .lbl{color:#8c8c8c}
+.detail-grid .val{color:#1a1a1a}
+.detail-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.detail-table th,.detail-table td{border:1px solid #f0f0f0;padding:8px 10px;text-align:left}
+.detail-table th{background:#fafafa;font-weight:600}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px}
+.tag-ok{background:#f6ffed;color:#52c41a}
+.tag-warn{background:#fff7e6;color:#fa8c16}
+.tag-off{background:#f5f5f5;color:#8c8c8c}
+.tag-danger{background:#fff1f0;color:#ff4d4f}
+.empty-tip{color:#bfbfbf;font-size:13px;padding:12px 0}
+.page-desc{margin:-8px 0 14px;font-size:13px;color:#64748b;line-height:1.65}
+.summary-cell{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.progress-bar{height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;margin:4px 0}
+.progress-bar i{display:block;height:100%;background:#1677ff;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar" id="demoBar">
+    <b>管理后台演示</b>
+    <span>纯网页版 · 无需联网 · 双击即可打开 · 右上角切换角色</span>
+    <button onclick="document.getElementById('demoBar').classList.add('hidden')">关闭</button>
+  </div>
+  <header class="header">
+    <img class="logo" src="company-logo.png" alt="盛越智健" />
+    <h1>智能陪伴机器人管理后台</h1>
+    <div class="header-actions">
+      <div class="msg-wrap" style="position:relative;display:inline-block">
+        <button onclick="toggleMsgMenu()">🔔 消息中心(3)</button>
+        <div id="msgMenu" class="msg-menu hidden">
+          <button class="msg-menu-item" onclick="closeMsgMenu();navigate('/elder-care/sos')"><b>紧急呼救待处理</b><small>张秀英 10:32 呼救</small></button>
+          <button class="msg-menu-item" onclick="closeMsgMenu();navigate('/knowledge/audit')"><b>知识库待审核</b><small>12 条待审内容</small></button>
+          <button class="msg-menu-item" onclick="closeMsgMenu();navigate('/elder-care/community')"><b>社区服务待分配</b><small>2 条未分配</small></button>
+        </div>
+      </div>
+      <button onclick="navigate('/account/settings')">⚙ 账号设置</button>
+      <span>演示管理员</span>
+      <select id="roleSelect" onchange="changeRole()">
+        <option value="super_admin">超级管理员</option>
+        <option value="operator">运营人员</option>
+        <option value="specialist">普通专员</option>
+        <option value="readonly">只读账号</option>
+      </select>
+      <button class="logout" onclick="toast('已退出（演示）')">退出登录</button>
+    </div>
+  </header>
+  <div class="body">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+<div class="modal-mask" id="modal">
+  <div class="modal">
+    <div class="modal-hd">编辑 <button onclick="closeModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>名称</label><input placeholder="请输入"></div>
+      <div class="form-row"><label>备注</label><input placeholder="请输入"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn" onclick="toast('已重置')">重置</button>
+      <button class="btn btn-primary" onclick="closeModal();toast('保存成功')">保存</button>
+    </div>
+  </div>
+</div>
+<div class="modal-mask" id="communityCatModal" onclick="if(event.target===this)closeCommunityCat()">
+  <div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+    <div class="modal-hd">选择服务类型 <button onclick="closeCommunityCat()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="modal-bd" style="display:flex;gap:12px;justify-content:center;padding:24px">
+      <button class="btn" style="flex:1;padding:20px 8px" onclick="pickCommunityCat('家政')">🧹 家政</button>
+      <button class="btn" style="flex:1;padding:20px 8px" onclick="pickCommunityCat('陪诊')">🏥 陪诊</button>
+      <button class="btn" style="flex:1;padding:20px 8px" onclick="pickCommunityCat('物业')">🏢 物业</button>
+    </div>
+  </div>
+</div>
+<div class="modal-mask" id="communityFormModal" onclick="if(event.target===this)closeCommunityForm()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><span id="communityFormTitle">新增服务</span> <button onclick="closeCommunityForm()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>服务类型</label><span id="cf-category" class="tag tag-warn">—</span></div>
+      <div class="form-row"><label>预约时间</label><input id="cf-time" type="datetime-local"></div>
+      <div class="form-row"><label>服务人员</label><input id="cf-staff" placeholder="留空则待分配"></div>
+      <div class="form-row"><label>具体服务项目</label><input id="cf-item" placeholder="请填写服务内容"></div>
+      <div class="form-row"><label>用户名</label><input id="cf-user" placeholder="必填"></div>
+      <div class="form-row"><label>手机号</label><input id="cf-phone" placeholder="必填"></div>
+    </div>
+    <div class="modal-ft"><button class="btn" onclick="closeCommunityForm()">取消</button><button class="btn btn-primary" onclick="saveCommunityOrder()">确认添加</button></div>
+  </div>
+</div>
+<div class="modal-mask" id="assignModal" onclick="if(event.target===this)closeAssign()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd">分配服务人员 <button onclick="closeAssign()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="modal-bd"><p id="assignInfo" style="font-size:13px;color:#64748b;line-height:1.6"></p>
+    <div class="form-row"><label>服务人员</label><select id="assignStaff"></select></div></div>
+    <div class="modal-ft"><button class="btn" onclick="closeAssign()">取消</button><button class="btn btn-primary" onclick="confirmAssign()">确认分配</button></div>
+  </div>
+</div>
+<div class="modal-mask" id="iotLogModal" onclick="if(event.target===this)closeIotLog()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><span id="iotLogTitle">设备日志</span> <button onclick="closeIotLog()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="modal-bd" id="iotLogBody"></div>
+    <div class="modal-ft"><button class="btn" onclick="closeIotLog()">关闭</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="drawer-mask" id="userDrawer" onclick="if(event.target===this)closeUserDetail()">
+  <div class="drawer-panel" onclick="event.stopPropagation()">
+    <div class="drawer-hd"><span id="userDrawerTitle">用户档案</span>
+      <span>
+        <button class="btn btn-primary" id="drawerEditBtn" style="display:none;padding:4px 12px;font-size:12px;margin-right:8px" onclick="openUserEditFromDrawer()">编辑完整档案</button>
+        <button onclick="closeUserDetail()" style="border:none;background:none;cursor:pointer;font-size:20px">×</button>
+      </span>
+    </div>
+    <div class="drawer-bd" id="userDrawerBody"></div>
+  </div>
+</div>
+<div class="modal-mask" id="userEditModal">
+  <div class="modal edit-modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><span id="userEditTitle">编辑用户档案</span><button onclick="closeUserEdit()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="modal-bd" id="userEditBody"></div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeUserEdit()">取消</button>
+      <button class="btn" onclick="resetUserEdit()">重置</button>
+      <button class="btn btn-primary" onclick="saveUserEdit()">保存档案</button>
+    </div>
+  </div>
+</div>
+<script>
+const ROLE_CAPS={super_admin:['view','create','update','delete','export','audit'],operator:['view','create','update','export','audit'],specialist:['view','export','audit'],readonly:['view']};
+const MENUS=[
+  {title:'首页',path:'/dashboard',icon:'📊',roles:['super_admin','operator','specialist','readonly']},
+  {title:'用户档案',icon:'👥',roles:['super_admin','operator','specialist','readonly'],children:[
+    {title:'全量用户列表',path:'/users/list'},{title:'短期问答档案',path:'/users/qa'},{title:'历史对话记录',path:'/users/chat'}]},
+  {title:'回忆录',icon:'📖',roles:['super_admin','operator','specialist','readonly'],children:[
+    {title:'问题库',path:'/memoir/question-bank'},{title:'个人回忆录管理',path:'/users/memoir'}]},
+  {title:'知识库',icon:'📚',roles:['super_admin','operator','specialist','readonly'],children:[
+    {title:'知识库列表',path:'/knowledge/list'},{title:'内容审核中心',path:'/knowledge/audit'},{title:'知识库数据统计',path:'/knowledge/stats'}]},
+  {title:'养老设备管理',icon:'🛡️',roles:['super_admin','operator','specialist','readonly'],children:[
+    {title:'紧急呼救记录',path:'/elder-care/sos',alert:1},{title:'亲情账号绑定',path:'/elder-care/family'},{title:'呼救内容管理',path:'/elder-care/message'},
+    {title:'社区服务对接',path:'/elder-care/community'},{title:'养老物联设备',path:'/elder-care/iot'}]},
+  {title:'AI引擎设置',icon:'🧠',roles:['super_admin','operator'],children:[
+    {title:'语音对话参数配置',path:'/ai/voice-dialog',type:'voiceDialog'},{title:'心智&记忆管理',path:'/ai/memory',type:'aiMemory'}]},
+  {title:'系统管理',icon:'⚙️',roles:['super_admin'],children:[
+    {title:'账号权限管理',path:'/system/account'},{title:'数据安全与存储',path:'/system/security'},{title:'操作日志审计',path:'/system/log'},{title:'前端版本&参数配置',path:'/system/version'}]}
+];
+const PAGES={
+'/dashboard':{type:'dash',title:'首页控制台'},
+'/question-bank/list':{title:'题库列表',cols:['题目','分类','状态'],actions:['新增题目|primary|create','批量导入|primary|create','批量导出|export|export','批量启用/禁用||update|batch','刷新||view','分类筛选||view'],rows:1},
+'/question-bank/category':{title:'题库分类管理',cols:['分类名称','题目数'],actions:['新增分类|primary|create','排序||update']},
+'/question-bank/task':{title:'采集任务监控',cols:['用户','进度','状态'],actions:['筛选用户||view','查看采集进度||view','重置采集|danger|delete','导出采集报表|export|export']},
+'/users/list':{title:'全量用户列表',type:'userList',actions:['新增用户|primary|create','批量导入|primary|create','导出用户档案|export|export','账号解绑|danger|delete|batch']},
+'/users/qa':{title:'短期问答档案',type:'shortQa',actions:['手动重生成摘要|primary|update','导出档案|export|export']},
+'/users/chat':{title:'历史对话记录',type:'chatArchive',actions:['导出记录|export|export','敏感内容标记|danger|update'],date:1},
+'/memoir/question-bank':{title:'回忆录问题库',type:'memoirQb',actions:['新增题目|primary|create','Word批量导入|primary|create','导出问题库|export|export']},
+'/users/memoir':{title:'个人回忆录管理',type:'memoirManage',actions:['批量重新生成|primary|update','归档已完成||update','导出文件|export|export']},
+'/users/memoir-answers':{title:'用户回答精要',type:'memoirAnswers'},
+'/ai/voice-dialog':{title:'语音对话参数配置',type:'voiceDialog',actions:['保存配置|primary|update','恢复默认||update','音色试听||view','测试语音||view']},
+'/ai/memory':{title:'心智&记忆管理',type:'aiMemory',actions:['保存配置|primary|update','重置用户记忆|danger|delete']},
+'/elder-care/sos':{title:'紧急呼救记录',cols:['用户','呼救时间','处理状态'],actions:['时间筛选||view','状态标记|primary|audit|alert','一键通知家属|danger|update|alert','导出记录|export|export'],date:1,rows:1},
+'/elder-care/family':{title:'亲情账号绑定',type:'ecFamily'},
+'/elder-care/message':{title:'呼救内容管理',type:'ecMessage',actions:['查看记录||view','置顶重要内容|primary|update','删除无效记录|danger|delete','导出呼救内容|export|export']},
+'/elder-care/community':{title:'社区服务对接',type:'ecCommunity',actions:['新增服务|primary|create','服务订单查看||view']},
+'/elder-care/iot':{title:'养老物联设备',type:'ecIot',actions:['刷新设备状态|primary|view','导出设备清单|export|export','导出设备日志|export|export']},
+'/knowledge/list':{title:'知识库列表',cols:['标准问','标准答','状态'],actions:['新增知识点|primary|create','批量导入|primary|create','导出|export|export','审核通过|primary|audit|batch','驳回|danger|audit|batch'],rows:1},
+'/knowledge/audit':{title:'内容审核中心',type:'kbAudit',actions:['提交审核申请|primary|create','批量审核|primary|audit|batch|super','一键驳回|danger|audit|super','标记待优化||audit|super','我的申请记录||view']},
+'/knowledge/stats':{title:'知识库数据统计',cols:['热门问题','命中次数','解决率'],actions:['时间筛选||view','导出统计报表|export|export'],date:1},
+'/system/account':{title:'账号权限管理',type:'sysAccount',actions:['新增账号|primary|create']},
+'/account/settings':{title:'账号设置',type:'accountSettings'},
+'/system/security':{title:'数据安全与存储',cols:['监控项','当前值','状态'],actions:['手动备份|primary|update','查看存储||view','加密规则配置|primary|update']},
+'/system/log':{title:'操作日志审计',cols:['操作账号','操作内容','时间'],actions:['时间筛选||view','日志检索||view','导出日志|export|export'],date:1},
+'/system/version':{title:'前端版本&参数配置',cols:['版本号','渠道','发布状态'],actions:['发布配置|primary|update','版本回滚|danger|delete','参数同步|primary|update']}
+};
+const DASH_ACTIONS=['刷新数据||view','数据导出|export|export','告警查看|danger|view','题库新增|primary|create|go:/question-bank/list|short','内容审核|primary|audit|go:/knowledge/audit|short','紧急呼救|danger|view|go:/elder-care/sos|short|alert'];
+const EC_SLOTS=3;
+function emptyEc(i){return{name:'',relation:'',phone:'',priority:i===0?'主联系人':'备用',notifySos:i===0}}
+function padEc(list){const a=(list||[]).filter(c=>c&&((c.name||'').trim()||(c.phone||'').trim())).slice(0,EC_SLOTS);while(a.length<EC_SLOTS)a.push(emptyEc(a.length));return a.slice(0,EC_SLOTS)}
+function cloneUser(u){const x=JSON.parse(JSON.stringify(u));x.status=(x.status==='禁用'||x.status==='已禁用')?'禁用':'正常';x.emergencyContacts=padEc(x.emergencyContacts);return x}
+function deviceLabel(d){return d&&d!=='—'?d:'未绑定'}
+
+const USER_SAMPLES=[
+  {id:1,name:'张秀英',phone:'138****5621',deviceId:'XB-20240312-001',status:'正常',age:72,gender:'女',registerAt:'2024-03-12',
+    habits:{height:'158 cm',weight:'55 kg',bloodType:'A型',sleepTime:'22:00–06:30',exercise:'每日散步30分钟',diet:'低盐低脂',chronic:'高血压'},
+    medications:[{name:'苯磺酸氨氯地平',dose:'5mg',schedule:'每日08:00',note:'餐后'},{name:'钙尔奇D',dose:'1片',schedule:'每日12:30',note:'—'}],
+    reminders:[{type:'用药',content:'降压药08:00',enabled:true,repeat:'每天'},{type:'运动',content:'公园散步',enabled:true,repeat:'每天16:00'}],
+    emergencyContacts:padEc([{name:'张明',relation:'儿子',phone:'139****8820',priority:'主联系人',notifySos:true},{name:'张丽',relation:'女儿',phone:'136****3312',priority:'备用',notifySos:true},{name:'社区网格员',relation:'社区',phone:'021-****6688',priority:'备用',notifySos:false}])},
+  {id:2,name:'李建国',phone:'159****1043',deviceId:'XB-20240508-002',status:'正常',age:68,gender:'男',registerAt:'2024-05-08',
+    habits:{height:'172 cm',weight:'70 kg',bloodType:'O型',sleepTime:'21:30–05:30',exercise:'太极拳每周3次',diet:'糖尿病饮食',chronic:'2型糖尿病'},
+    medications:[{name:'二甲双胍',dose:'0.5g',schedule:'07:30、19:30',note:'餐前'}],
+    reminders:[{type:'用药',content:'二甲双胍（早）',enabled:true,repeat:'每天07:30'}],
+    emergencyContacts:padEc([{name:'李芳',relation:'配偶',phone:'158****2201',priority:'主联系人',notifySos:true},{name:'李强',relation:'儿子',phone:'137****9903',priority:'备用',notifySos:true}])},
+  {id:3,name:'王美华',phone:'186****7789',deviceId:'XB-20250120-003',status:'正常',age:75,gender:'女',registerAt:'2025-01-20',
+    habits:{height:'155 cm',weight:'52 kg',bloodType:'B型',sleepTime:'23:00–07:00',exercise:'室内保健操',diet:'清淡易嚼',chronic:'骨质疏松'},
+    medications:[{name:'碳酸钙D3',dose:'600mg',schedule:'每日20:00',note:'—'}],
+    reminders:[{type:'用药',content:'钙片',enabled:true,repeat:'每天20:00'}],
+    emergencyContacts:padEc([{name:'王磊',relation:'侄子',phone:'135****4410',priority:'主联系人',notifySos:true}])},
+  {id:4,name:'陈德明',phone:'133****6654',deviceId:'XB-20231102-004',status:'正常',age:80,gender:'男',registerAt:'2023-11-02',
+    habits:{height:'168 cm',weight:'62 kg',bloodType:'AB型',sleepTime:'22:30–06:00',exercise:'康复训练',diet:'软食少食多餐',chronic:'冠心病、轻度认知障碍'},
+    medications:[{name:'瑞舒伐他汀',dose:'10mg',schedule:'每日21:00',note:'—'},{name:'多奈哌齐',dose:'5mg',schedule:'每日09:00',note:'—'}],
+    reminders:[{type:'用药',content:'瑞舒伐他汀',enabled:true,repeat:'每天21:00'}],
+    emergencyContacts:padEc([{name:'陈静',relation:'女儿',phone:'138****5520',priority:'主联系人',notifySos:true},{name:'护理站',relation:'机构',phone:'400-****9012',priority:'备用',notifySos:true}])},
+  {id:5,name:'刘玉兰',phone:'177****3390',deviceId:'—',status:'禁用',age:69,gender:'女',registerAt:'2024-08-15',
+    habits:{height:'160 cm',weight:'58 kg',bloodType:'A型',sleepTime:'22:00–06:00',exercise:'—',diet:'普通',chronic:'—'},
+    medications:[],reminders:[{type:'饮水',content:'喝水提醒',enabled:false,repeat:'每天'}],
+    emergencyContacts:padEc([{name:'刘洋',relation:'儿子',phone:'136****7701',priority:'主联系人',notifySos:true}])}
+];
+const SHORT_QA_RECORDS=[
+  {id:1,userName:'张秀英',phone:'138****5621',wordCount:1986,updatedAt:'2026-05-28 10:15',summary:'用户近期关注血压管理与日常作息。偏好早晨散步，对低盐饮食接受度较高。与机器人多次讨论降压药服用时间……（约2000字当前记忆，每次对话后重生成）'},
+  {id:2,userName:'李建国',phone:'159****1043',wordCount:2012,updatedAt:'2026-05-28 09:42',summary:'糖尿病患者，重视空腹血糖监测。对话中确认二甲双胍餐前服用习惯……'},
+  {id:3,userName:'王美华',phone:'186****7789',wordCount:1754,updatedAt:'2026-05-27 16:30',summary:'骨质疏松相关咨询为主，关注钙片服用注意事项……'},
+  {id:4,userName:'陈德明',phone:'133****6654',wordCount:1998,updatedAt:'2026-05-28 08:05',summary:'高龄用户，冠心病与轻度认知障碍并在对话中体现……'},
+  {id:5,userName:'刘玉兰',phone:'177****3390',wordCount:892,updatedAt:'2026-05-20 14:00',summary:'账号已禁用，短期记忆生成暂停。'}
+];
+const CHAT_ARCHIVE_RECORDS=[
+  {id:1,userName:'张秀英',phone:'138****5621',segment:'第12段',rounds:18,updatedAt:'2026-05-28 10:12',summary:'【压缩摘要】询问今日血压与服药；确认已服降压药；闲聊散步；结束。'},
+  {id:2,userName:'张秀英',phone:'138****5621',segment:'第11段',rounds:24,updatedAt:'2026-05-27 19:40',summary:'【压缩摘要】讨论回忆录片段；沪语朗读；儿子周末到访。'},
+  {id:3,userName:'李建国',phone:'159****1043',segment:'第8段',rounds:15,updatedAt:'2026-05-28 09:38',summary:'【压缩摘要】空腹血糖6.2；确认用药；太极拳时间。'},
+  {id:4,userName:'王美华',phone:'186****7789',segment:'第5段',rounds:12,updatedAt:'2026-05-27 16:28',summary:'【压缩摘要】钙片与牛奶间隔咨询；饮食建议。'},
+  {id:5,userName:'陈德明',phone:'133****6654',segment:'第20段',rounds:22,updatedAt:'2026-05-28 08:02',summary:'【压缩摘要】记忆训练三轮；晚间服药提醒。'}
+];
+const MEMOIR_Q_TOTAL=1000,ANSWER_MAX=1000;
+const MEMOIR_CATS=['童年记忆','青春岁月','工作与事业','婚姻家庭','子女亲情','兴趣爱好','人生感悟'];
+let memoirQuestions=(function(){const a=[];for(let i=1;i<=MEMOIR_Q_TOTAL;i++)a.push({id:i,category:MEMOIR_CATS[i%MEMOIR_CATS.length],content:`【第${i}题】请讲述与「${MEMOIR_CATS[i%MEMOIR_CATS.length]}」相关的回忆。`,enabled:true});return a})();
+const MEMOIR_USERS=[
+  {id:1,userName:'张秀英',phone:'138****5621',title:'张阿姨的人生回忆录',answered:342,status:'采集中',updatedAt:'2026-05-28'},
+  {id:2,userName:'李建国',phone:'159****1043',title:'李叔叔的往事',answered:856,status:'采集中',updatedAt:'2026-05-27'},
+  {id:3,userName:'王美华',phone:'186****7789',title:'王阿姨记忆册',answered:1000,status:'已完成',updatedAt:'2026-05-26'},
+  {id:4,userName:'陈德明',phone:'133****6654',title:'陈伯伯岁月记',answered:128,status:'采集中',updatedAt:'2026-05-25'},
+  {id:5,userName:'刘玉兰',phone:'177****3390',title:'—',answered:0,status:'已暂停',updatedAt:'2026-05-20'}
+];
+let memoirQbPage=1,memoirQbKw='',memoirQbCat='',memoirManageKw='',memoirExportFilter='',memoirAnswersUserId=null,memoirAnsPage=1,memoirAnsFilter='all',memoirAnsCat='',memoirExpandAll=false,memoirExpandedIds=new Set();
+function memoirPct(n){return Math.min(100,Math.round(n/MEMOIR_Q_TOTAL*1000)/10)}
+function getMemoirUser(id){return MEMOIR_USERS.find(u=>u.id===id)}
+function getAnswerEssence(user,q){if(q.id>user.answered)return null;return `【精要】${user.userName}在第${q.id}题（${q.category}）的回答：围绕题目展开叙述，保留人物与时间线，约${300+(q.id%500)}字，供回忆录素材使用。`}
+let role='super_admin',path='/dashboard',openSubs={},sidebarCollapsed=false;
+let editingUserId=null,editSnapshot=null,detailUserId=null;
+let archiveUserFilter='';
+function filterArchive(list){const k=archiveUserFilter.trim();if(!k)return list;return list.filter(r=>r.userName.includes(k)||r.phone.includes(k))}
+function renderArchiveFilter(){return`<div class="filter"><label style="font-size:13px;color:#595959">用户筛选</label><input id="archiveUserKw" placeholder="手机号 / 用户名" value="${archiveUserFilter.replace(/"/g,'&quot;')}" oninput="archiveUserFilter=this.value"><button class="btn" onclick="toast('已筛选 '+filterArchive(path==='/users/qa'?SHORT_QA_RECORDS:CHAT_ARCHIVE_RECORDS).length+' 条')">查询</button><button class="btn" onclick="archiveUserFilter='';render()">重置</button>${path==='/users/chat'?'<input type="date"> 至 <input type="date">':''}</div>`}
+function renderShortQaTable(){const rows=filterArchive(SHORT_QA_RECORDS);let h='<table><thead><tr><th><input type="checkbox"></th><th>用户名</th><th>手机号</th><th>摘要字数</th><th>最近更新</th><th>当前记忆摘要</th><th>操作</th></tr></thead><tbody>';
+rows.forEach(r=>{const wc=r.wordCount>=1800?'tag-ok':'tag-warn';h+=`<tr><td><input type="checkbox"></td><td>${r.userName}</td><td>${r.phone}</td><td><span class="tag ${wc}">${r.wordCount}字</span></td><td>${r.updatedAt}</td><td class="summary-cell" title="${r.summary.replace(/"/g,'&quot;')}">${r.summary}</td><td><button class="link-btn" onclick="toast('查看全文（演示）')">查看全文</button></td></tr>`});
+return h+`</tbody></table><div class="pager">共 ${rows.length} 条</div>`}
+function renderChatArchiveTable(){const rows=filterArchive(CHAT_ARCHIVE_RECORDS);let h='<table><thead><tr><th><input type="checkbox"></th><th>用户名</th><th>手机号</th><th>对话段</th><th>轮次</th><th>结束时间</th><th>压缩摘要</th><th>操作</th></tr></thead><tbody>';
+rows.forEach(r=>{h+=`<tr><td><input type="checkbox"></td><td>${r.userName}</td><td>${r.phone}</td><td>${r.segment}</td><td>${r.rounds}</td><td>${r.updatedAt}</td><td class="summary-cell" title="${r.summary.replace(/"/g,'&quot;')}">${r.summary}</td><td><button class="link-btn" onclick="toast('查看摘要（演示）')">查看摘要</button></td></tr>`});
+return h+`</tbody></table><div class="pager">共 ${rows.length} 条</div>`}
+
+function can(p){return (ROLE_CAPS[role]||[]).includes(p)}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function changeRole(){role=document.getElementById('roleSelect').value;toast('已切换角色');navigate('/dashboard')}
+function toggleMsgMenu(){document.getElementById('msgMenu').classList.toggle('hidden')}
+function closeMsgMenu(){document.getElementById('msgMenu').classList.add('hidden')}
+function parseBtn(s){const p=s.split('|');return{label:p[0],cls:p[1]||'',perm:p[2]||'view',batch:p[3]==='batch',alert:p[3]==='alert',go:p[3]?.startsWith('go:')?p[3].slice(3):null,short:p[4]==='short'||p[3]==='short',superOnly:p.includes('super')}}
+function isSuperAdmin(){return role==='super_admin'}
+function btnHtml(b){if(!can(b.perm))return'';let c='btn';if(b.cls==='primary')c+=' btn-primary';else if(b.cls==='danger')c+=' btn-danger';else if(b.cls==='export')c+=' btn-export';if(b.alert)c+=' btn-alert';return`<button class="${c}" onclick="fireBtn('${b.label}'${b.go?",'"+b.go+"'":''})">${b.label}</button>`}
+function fireBtn(label,go){if(go)navigate(go);toast('[演示] '+label)}
+function allowedPaths(){const s=new Set(['/dashboard']);MENUS.forEach(m=>{if(m.roles.includes(role)){if(m.path)s.add(m.path);m.children?.forEach(c=>s.add(c.path))}});return s}
+function navigate(p){if(p.startsWith('/users/memoir/answers/')){const id=+p.split('/').pop();if(getMemoirUser(id)){path='/users/memoir-answers';memoirAnswersUserId=id;render();window.scrollTo(0,0);return}}
+if(p==='/ai/voice'||p==='/ai/dialog')p='/ai/voice-dialog';
+if(p==='/account/settings'||(allowedPaths().has(p)||p.startsWith('/users/memoir/answers'))){}else{toast('当前角色无权访问');p='/dashboard'}
+path=p;memoirAnswersUserId=null;render();window.scrollTo(0,0)}
+
+function isChildActive(m){return m.children?.some(c=>c.path===path)}
+function toggleSub(i){openSubs[i]=openSubs[i]===false?true:false;renderMenu()}
+function toggleSidebar(){sidebarCollapsed=!sidebarCollapsed;document.getElementById('sidebar').classList.toggle('collapsed',sidebarCollapsed);renderMenu()}
+function renderMenu(){
+  const sb=document.getElementById('sidebar');
+  const visible=MENUS.filter(m=>m.roles.includes(role));
+  let h=`<div class="sidebar-brand"><img class="brand-icon" src="company-logo.png" alt="盛越智健" /><div class="brand-text">小伴管理后台<small>智能陪伴机器人</small></div></div>`;
+  h+=`<div class="nav-scroll"><div class="nav-group-label">功能导航</div>`;
+  visible.forEach((m,i)=>{
+    const gIdx=MENUS.indexOf(m);
+    if(m.path){
+      h+=`<button class="nav-item ${path===m.path?'active':''}" onclick="navigate('${m.path}')" title="${m.title}">
+        <span class="nav-icon">${m.icon}</span><span class="nav-label">${m.title}</span></button>`;
+    }else{
+      const open=openSubs[gIdx]!==false||isChildActive(m);
+      h+=`<button class="nav-item ${isChildActive(m)?'active':''}" onclick="toggleSub(${gIdx})" title="${m.title}">
+        <span class="nav-icon">${m.icon}</span><span class="nav-label">${m.title}</span>
+        <span class="nav-arrow ${open?'open':''}">▼</span></button>`;
+      h+=`<div class="sub-list ${open?'open':''}">`;
+      m.children.forEach(c=>{
+        h+=`<button class="sub-item ${path===c.path?'active':''} ${c.alert?'alert-item':''}" onclick="navigate('${c.path}')">
+          <span class="sub-dot"></span><span>${c.title}</span>${c.alert?'<span class="sub-badge">告警</span>':''}</button>`;
+      });
+      h+=`</div>`;
+    }
+  });
+  h+=`</div><div class="sidebar-footer"><button class="collapse-side" onclick="toggleSidebar()">${sidebarCollapsed?'▶':'◀'} <span>${sidebarCollapsed?'展开侧栏':'收起侧栏'}</span></button></div>`;
+  sb.innerHTML=h;
+  sb.classList.toggle('collapsed',sidebarCollapsed);
+}
+function breadcrumb(){if(path==='/dashboard')return '<span onclick="navigate(\'/dashboard\')">首页</span> / 首页控制台';
+if(path==='/users/memoir-answers'){const u=getMemoirUser(memoirAnswersUserId);return`<span onclick="navigate('/dashboard')">首页</span> / 回忆录 / <span onclick="navigate('/users/memoir')">个人回忆录管理</span> / ${u?u.userName+' · 回答精要':'回答精要'}`}
+for(const m of MENUS){const c=m.children?.find(x=>x.path===path);if(c)return`<span onclick="navigate('/dashboard')">首页</span> / ${m.title} / ${c.title}`}return''}
+function permHint(){const base={super_admin:'当前：全部按钮可见',operator:'运营：隐藏系统管理',specialist:'专员：仅查看/审核/导出',readonly:'只读：操作按钮已隐藏'}[role];return path==='/users/list'?base+' · 点击姓名查看用户档案':base}
+function statusTag(s){return s==='正常'?'tag-ok':'tag-off'}
+function toggleUserStatus(id){const u=USER_SAMPLES.find(x=>x.id===id);if(!u)return;u.status=u.status==='禁用'?'正常':'禁用';toast(u.status==='禁用'?'已禁用 '+u.name:'已恢复 '+u.name);render()}
+function renderActions(list){const main=[],batch=[],short=[];list.forEach(s=>{const b=parseBtn(s);if(b.superOnly&&!isSuperAdmin())return;if(!can(b.perm))return;(b.batch?batch:b.short?short:main).push(b)});let h='';if(main.length)h+=`<div class="toolbar">${main.map(btnHtml).join('')}<span class="hint">${permHint()}</span></div>`;if(short.length)h+=`<div class="toolbar short">${short.map(btnHtml).join('')}</div>`;if(batch.length)h+=`<div class="toolbar batch">${batch.map(btnHtml).join('')}</div>`;return h}
+function activeEc(list){return (list||[]).filter(c=>c&&((c.name||'').trim()||(c.phone||'').trim()))}
+function buildFamilyBindings(){const rows=[];USER_SAMPLES.forEach(u=>{activeEc(u.emergencyContacts).forEach(c=>{rows.push({elder:u.name,elderPhone:u.phone,device:deviceLabel(u.deviceId),family:c.name||'—',familyPhone:c.phone||'—',relation:c.relation||'—',priority:c.priority||'—',notify:c.notifySos?'是':'否'})})});return rows}
+function renderKbAuditPage(){const pg=PAGES['/knowledge/audit'];const desc=isSuperAdmin()?'<p class="page-desc">超级管理员可进行<strong>审核通过、驳回、标记待优化</strong>等操作。</p>':'<p class="page-desc" style="padding:10px 12px;background:#fffbe6;border:1px solid #ffe58f;border-radius:8px;color:#ad6800">当前角色仅可<strong>提交审核申请</strong>，不能直接审核；审核操作仅限超级管理员。</p>';
+const rows=[['高血压患者能否剧烈运动？','运营-小王','2026-05-28 09:10','待审核'],['糖尿病饮食禁忌补充','专员-小李','2026-05-27 16:20','待审核'],['沪语播报语速建议','运营-小张','2026-05-27 11:00','待优化']];
+let h=`<div class="card"><h2>${pg.title}</h2>${desc}${renderActions(pg.actions||[])}<table><thead><tr><th>待审内容</th><th>提交人</th><th>提交时间</th><th>状态</th>${isSuperAdmin()?'<th>操作</th>':''}</tr></thead><tbody>`;
+rows.forEach(r=>{h+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><span class="tag tag-warn">${r[3]}</span></td>`;if(isSuperAdmin())h+=`<td><button class="link-btn" onclick="toast('已通过（演示）')">通过</button> <button class="link-btn link-danger" onclick="toast('已驳回（演示）')">驳回</button></td>`;h+='</tr>'});return h+'</tbody></table><div class="pager">共 4 条</div></div>'}
+function renderEcFamilyPage(){const rows=buildFamilyBindings();
+let h=`<div class="card"><h2>亲情账号绑定</h2><p class="page-desc">与<strong>用户档案 → 全量用户列表</strong>中的<strong>紧急联系人</strong>自动同步，修改请前往用户列表编辑档案。</p>
+<div class="page-desc" style="padding:10px 12px;background:#e6f4ff;border:1px solid #91caff;border-radius:8px;margin-bottom:12px">老人账号、家属姓名/手机、关系、呼救通知均来自用户「紧急联系人（3 位）」配置。</div>
+<div class="filter"><input placeholder="老人姓名 / 手机 / 家属手机"><button class="btn" onclick="toast('查询中')">查询</button><button class="btn btn-primary" onclick="toast('已从用户档案同步 '+buildFamilyBindings().length+' 条')">同步用户档案</button></div>
+<table><thead><tr><th>老人账号</th><th>老人手机</th><th>设备号</th><th>家属姓名</th><th>家属手机</th><th>关系</th><th>优先级</th><th>呼救通知</th></tr></thead><tbody>`;
+rows.forEach(r=>{h+=`<tr><td>${r.elder}</td><td>${r.elderPhone}</td><td>${r.device}</td><td>${r.family}</td><td>${r.familyPhone}</td><td>${r.relation}</td><td>${r.priority}</td><td>${r.notify}</td></tr>`});
+return h+`</tbody></table><div class="pager">共 ${rows.length} 条 · 数据来自用户档案紧急联系人</div></div>`}
+const SOS_MSG_ROWS=[
+  {userName:'张秀英',userPhone:'138****5621',sosId:'SOS-20260528-001',sender:'张秀英（用户）',content:'我不舒服，帮我联系儿子……',time:'2026-05-28 10:32',pinned:1},
+  {userName:'张秀英',userPhone:'138****5621',sosId:'SOS-20260528-001',sender:'机器人小伴',content:'已联系主联系人张明。',time:'2026-05-28 10:32',pinned:0},
+  {userName:'张秀英',userPhone:'138****5621',sosId:'SOS-20260528-001',sender:'张明（家属）',content:'妈你别急，我马上过来。',time:'2026-05-28 10:33',pinned:1},
+  {userName:'李建国',userPhone:'159****1043',sosId:'SOS-20260527-008',sender:'李建国（用户）',content:'头晕，需要帮助。',time:'2026-05-27 19:15',pinned:0}
+];
+let ecMsgFilter={userName:'',userPhone:'',keyword:''};
+function filterSosMsg(){const n=ecMsgFilter.userName.trim(),p=ecMsgFilter.userPhone.trim(),k=ecMsgFilter.keyword.trim();
+return SOS_MSG_ROWS.filter(r=>(!n||r.userName.includes(n))&&(!p||r.userPhone.includes(p))&&(!k||r.sender.includes(k)||r.content.includes(k)))}
+function renderEcMessagePage(){const pg=PAGES['/elder-care/message'];const rows=filterSosMsg();
+let h=`<div class="card"><h2>${pg.title}</h2>
+<div class="page-desc" style="padding:10px 12px;background:#fffbe6;border:1px solid #ffe58f;border-radius:8px;margin-bottom:12px"><b>使用说明：</b>本页面用于查看与管理<strong>紧急呼救过程中</strong>产生的沟通内容记录，便于事后复盘；<strong>非日常闲聊留言</strong>。</div>
+<div class="filter"><input id="sosUserName" placeholder="用户名" value="${ecMsgFilter.userName.replace(/"/g,'&quot;')}" oninput="ecMsgFilter.userName=this.value">
+<input id="sosUserPhone" placeholder="手机号" value="${ecMsgFilter.userPhone.replace(/"/g,'&quot;')}" oninput="ecMsgFilter.userPhone=this.value">
+<input id="sosKw" placeholder="发送方 / 呼救内容" value="${ecMsgFilter.keyword.replace(/"/g,'&quot;')}" oninput="ecMsgFilter.keyword=this.value">
+<button class="btn" onclick="render()">查询</button></div>${renderActions(pg.actions||[])}
+<table><thead><tr><th>用户名</th><th>手机号</th><th>呼救单号</th><th>发送方</th><th>呼救内容</th><th>时间</th><th>置顶</th></tr></thead><tbody>`;
+rows.forEach(r=>{h+=`<tr><td>${r.userName}</td><td>${r.userPhone}</td><td>${r.sosId}</td><td>${r.sender}</td><td>${r.content}</td><td>${r.time}</td><td>${r.pinned?'<span class="tag tag-warn">置顶</span>':'—'}</td></tr>`});
+return h+`</tbody></table><div class="pager">共 ${rows.length} 条 · 紧急呼救场景沟通记录</div></div>`}
+const COMMUNITY_ORDERS=[
+  {id:1,category:'家政',serviceItem:'全屋保洁+厨房清洁',staff:'王阿姨',appointmentAt:'2026-05-29 09:00',userName:'张秀英',userPhone:'138****5621',status:'待服务'},
+  {id:2,category:'陪诊',serviceItem:'市一医院心内科复诊陪同',staff:'',appointmentAt:'2026-05-30 08:30',userName:'李建国',userPhone:'159****1043',status:'待分配'},
+  {id:3,category:'物业',serviceItem:'卫生间漏水报修',staff:'',appointmentAt:'2026-05-28 14:00',userName:'王美华',userPhone:'186****7789',status:'待分配'},
+  {id:4,category:'陪诊',serviceItem:'体检报告解读',staff:'李护士',appointmentAt:'2026-05-27 10:00',userName:'陈德明',userPhone:'133****6654',status:'已完成'}
+];
+const COMMUNITY_STAFF={家政:['王阿姨','李阿姨'],陪诊:['李护士','陈护士'],物业:['物业张师傅','物业老刘']};
+let communityFilter={userName:'',userPhone:'',keyword:'',pendingOnly:false};
+let communityPickCategory='',assignTargetId=null;
+function filterCommunity(){return COMMUNITY_ORDERS.filter(o=>{
+  const n=communityFilter.userName.trim(),p=communityFilter.userPhone.trim(),k=communityFilter.keyword.trim();
+  if(communityFilter.pendingOnly&&o.status!=='待分配')return false;
+  if(n&&!o.userName.includes(n))return false;if(p&&!o.userPhone.includes(p))return false;
+  if(k&&!o.serviceItem.includes(k))return false;return true})}
+function toggleCommunityPending(){communityFilter.pendingOnly=!communityFilter.pendingOnly;toast(communityFilter.pendingOnly?'仅显示待分配':'显示全部');render()}
+function openAssignCommunity(id){assignTargetId=id;const o=COMMUNITY_ORDERS.find(x=>x.id===id);if(!o)return;
+document.getElementById('assignInfo').innerHTML=`用户：<b>${o.userName}</b>（${o.userPhone}）<br>需求：${o.category} · ${o.serviceItem}`;
+const sel=document.getElementById('assignStaff');sel.innerHTML=(COMMUNITY_STAFF[o.category]||[]).map(s=>`<option value="${s}">${s}</option>`).join('');
+document.getElementById('assignModal').classList.add('show')}
+function closeAssign(){document.getElementById('assignModal').classList.remove('show');assignTargetId=null}
+function confirmAssign(){const name=document.getElementById('assignStaff').value;if(!name){toast('请选择服务人员');return}
+const o=COMMUNITY_ORDERS.find(x=>x.id===assignTargetId);if(!o)return;o.staff=name;o.status='待服务';closeAssign();toast('已分配 '+name);render()}
+let communityPickCategory='';
+function openCommunityCategory(){document.getElementById('communityCatModal').classList.add('show')}
+function closeCommunityCat(){document.getElementById('communityCatModal').classList.remove('show')}
+function pickCommunityCat(c){communityPickCategory=c;closeCommunityCat();document.getElementById('communityFormTitle').textContent='新增'+c+'服务';
+document.getElementById('cf-category').textContent=c;document.getElementById('communityFormModal').classList.add('show')}
+function closeCommunityForm(){document.getElementById('communityFormModal').classList.remove('show')}
+function saveCommunityOrder(){const t=document.getElementById('cf-time').value,s=document.getElementById('cf-staff').value.trim(),i=document.getElementById('cf-item').value.trim();
+const un=document.getElementById('cf-user').value.trim(),ph=document.getElementById('cf-phone').value.trim();
+if(!un||!ph||!t||!i){toast('请填写用户名、手机号、预约时间与服务项目');return}
+COMMUNITY_ORDERS.unshift({id:Date.now(),category:communityPickCategory,serviceItem:i,staff:s||'—',appointmentAt:t,userName:un,userPhone:ph,status:s?'待服务':'待分配'});
+closeCommunityForm();toast('已添加');render()}
+function renderEcCommunityPage(){const pg=PAGES['/elder-care/community'],rows=filterCommunity(),pendingN=COMMUNITY_ORDERS.filter(o=>o.status==='待分配').length;
+let h=`<div class="card"><h2>${pg.title}</h2><p class="page-desc">支持按用户筛选、<strong>需求待分配</strong>筛选及分配服务人员。</p>
+<div class="filter"><input placeholder="用户名" oninput="communityFilter.userName=this.value" value="${communityFilter.userName.replace(/"/g,'&quot;')}">
+<input placeholder="手机号" oninput="communityFilter.userPhone=this.value" value="${communityFilter.userPhone.replace(/"/g,'&quot;')}">
+<input placeholder="服务项目" oninput="communityFilter.keyword=this.value" value="${communityFilter.keyword.replace(/"/g,'&quot;')}">
+<button class="btn" onclick="render()">查询</button>
+<button class="btn ${communityFilter.pendingOnly?'btn-primary':''}" onclick="toggleCommunityPending()">需求待分配${pendingN?' ('+pendingN+')':''}</button>
+<button class="btn btn-primary" onclick="openCommunityCategory()">新增服务</button></div>${renderActions((pg.actions||[]).filter(s=>!s.includes('新增服务')))}
+<table><thead><tr><th>用户名</th><th>手机号</th><th>服务类型</th><th>具体服务项目</th><th>服务人员</th><th>预约时间</th><th>状态</th><th>操作</th></tr></thead><tbody>`;
+rows.forEach(o=>{const st=o.status==='已完成'?'tag-ok':o.status==='待分配'?'tag-danger':'tag-warn';
+h+=`<tr><td>${o.userName}</td><td>${o.userPhone}</td><td>${o.category}</td><td>${o.serviceItem}</td><td>${o.staff||'—'}</td><td>${o.appointmentAt}</td><td><span class="tag ${st}">${o.status}</span></td><td>`;
+if(o.status==='待分配')h+=`<button class="link-btn" onclick="openAssignCommunity(${o.id})">分配人员</button>`;h+='</td></tr>'});
+return h+`</tbody></table><div class="pager">共 ${rows.length} 条</div></div>`}
+const VOICE_TEMPLATES=[{k:'warm',l:'温暖陪伴',nick:'小伴',lang:'普通话',timbre:'温婉阿姨'},{k:'neighbor',l:'邻家晚辈',nick:'小伴',lang:'普通话',timbre:'邻家女孩'},{k:'nurse',l:'专业护理',nick:'护理小伴',lang:'普通话',timbre:'沉稳男声'},{k:'shanghai',l:'沪语阿姨',nick:'小伴',lang:'沪语',timbre:'温婉阿姨'},{k:'butler',l:'沉稳管家',nick:'小伴',lang:'普通话',timbre:'成熟男声'}];
+let voiceCfg={template:'warm',nickname:'小伴',language:'普通话',timbre:'温婉阿姨',intro:'你是专为老年人设计的情感陪伴机器人，性格温暖、耐心。',wakeWord:'小伴小伴',emotion:'温和',speechRate:50,dialogThreshold:0.6,multiTurn:30,kbPriority:true};
+function renderVoiceDialogPage(){const pg=PAGES['/ai/voice-dialog'];
+let chips=VOICE_TEMPLATES.map(t=>`<button type="button" class="btn ${voiceCfg.template===t.k?'btn-primary':''}" onclick="voiceCfg.template='${t.k}';voiceCfg.nickname='${t.nick}';voiceCfg.language='${t.lang}';voiceCfg.timbre='${t.timbre}';render()">${t.l}</button>`).join('');
+return `<div class="card"><h2>${pg.title}</h2><p class="page-desc">配置角色人设、语音音色及对话规则（合并原语音参数与对话规则）。</p>${renderActions(pg.actions||[])}
+<div class="form-row"><label>角色模板</label><div style="display:flex;flex-wrap:wrap;gap:8px">${chips}</div></div>
+<div class="form-row"><label>助手昵称</label><input value="${voiceCfg.nickname.replace(/"/g,'&quot;')}" oninput="voiceCfg.nickname=this.value"></div>
+<div class="edit-grid" style="grid-template-columns:1fr 1fr"><div class="form-row"><label>对话语言</label><select onchange="voiceCfg.language=this.value"><option ${voiceCfg.language==='普通话'?'selected':''}>普通话</option><option ${voiceCfg.language==='沪语'?'selected':''}>沪语</option><option ${voiceCfg.language==='中英混合'?'selected':''}>中英混合</option></select></div>
+<div class="form-row"><label>角色音色</label><div style="display:flex;gap:8px"><select style="flex:1" onchange="voiceCfg.timbre=this.value"><option ${voiceCfg.timbre==='温婉阿姨'?'selected':''}>温婉阿姨</option><option ${voiceCfg.timbre==='邻家女孩'?'selected':''}>邻家女孩</option><option ${voiceCfg.timbre==='成熟男声'?'selected':''}>成熟男声</option></select><button class="btn btn-primary" onclick="toast('试听 '+voiceCfg.timbre)">▶</button></div></div></div>
+<div class="form-row"><label>角色介绍 <button class="link-btn" onclick="toast('AI优化（演示）')">✨ AI一键优化</button></label><textarea rows="6" oninput="voiceCfg.intro=this.value">${voiceCfg.intro}</textarea></div>
+<div class="detail-sec"><h4>语音参数</h4><div class="edit-grid"><div class="form-row"><label>唤醒词</label><input value="${voiceCfg.wakeWord}" oninput="voiceCfg.wakeWord=this.value"></div><div class="form-row"><label>情感语气</label><select onchange="voiceCfg.emotion=this.value"><option>温和</option><option>活泼</option><option>沉稳</option></select></div></div>
+<div class="form-row"><label>播报语速 ${voiceCfg.speechRate}%</label><input type="range" min="20" max="100" value="${voiceCfg.speechRate}" oninput="voiceCfg.speechRate=this.value;this.previousElementSibling.textContent='播报语速 '+this.value+'%'"></div></div>
+<div class="detail-sec"><h4>对话规则</h4><div class="edit-grid" style="grid-template-columns:1fr 1fr 1fr"><div class="form-row"><label>自由对话阈值</label><input type="number" step="0.1" value="${voiceCfg.dialogThreshold}" oninput="voiceCfg.dialogThreshold=this.value"></div>
+<div class="form-row"><label>多轮记忆(分钟)</label><input type="number" value="${voiceCfg.multiTurn}" oninput="voiceCfg.multiTurn=this.value"></div><div class="form-row"><label>知识库优先级</label><label><input type="checkbox" ${voiceCfg.kbPriority?'checked':''} onchange="voiceCfg.kbPriority=this.checked"> 开启</label></div></div></div></div>`}
+function renderAiMemoryPage(){const pg=PAGES['/ai/memory'];
+return `<div class="card"><h2>${pg.title}</h2>
+<div class="page-desc" style="padding:10px 12px;background:#e6f4ff;border:1px solid #91caff;border-radius:8px;margin-bottom:16px"><b>使用说明：</b><strong>跨会话记忆</strong>用于保留<strong>短期记忆摘要</strong>的时长，<strong>不影响</strong>历史对话记录中的对话段精要保留。</div>
+${renderActions(pg.actions||[])}
+<div class="form-row"><label>跨会话记忆时长（天）</label><input type="number" value="7"></div>
+<div class="form-row"><label>用户偏好学习</label><label><input type="checkbox" checked> 开启</label></div></div>`}
+const IOT_DEVICES=[
+  {userName:'张秀英',userPhone:'138****5621',deviceType:'门磁',deviceName:'入户门磁',deviceSn:'MC-XB-01',online:1,lastOnline:'2026-05-28 11:20',logs:['11:20 设备心跳正常','07:15 门磁开启·外出','22:40 门磁闭合·归家']},
+  {userName:'张秀英',userPhone:'138****5621',deviceType:'跌倒探测仪',deviceName:'客厅跌倒雷达',deviceSn:'FD-XB-02',online:1,lastOnline:'2026-05-28 11:18',logs:['11:18 雷达扫描正常','05-26 疑似跌倒（已复核误报）']},
+  {userName:'李建国',userPhone:'159****1043',deviceType:'烟雾报警器',deviceName:'厨房烟感',deviceSn:'SM-XB-01',online:0,lastOnline:'2026-05-27 09:33',logs:['09:33 设备离线·电量不足','05-25 自检通过']},
+  {userName:'王美华',userPhone:'186****7789',deviceType:'跌倒探测仪',deviceName:'卧室跌倒探测',deviceSn:'FD-XB-03',online:1,lastOnline:'2026-05-28 11:05',logs:['11:05 无异常活动']}
+];
+let iotFilter={userName:'',userPhone:'',deviceType:'',online:''};
+function filterIot(){return IOT_DEVICES.filter(d=>{
+  const n=iotFilter.userName.trim(),p=iotFilter.userPhone.trim();
+  if(n&&!d.userName.includes(n))return false;if(p&&!d.userPhone.includes(p))return false;
+  if(iotFilter.deviceType&&d.deviceType!==iotFilter.deviceType)return false;
+  if(iotFilter.online==='online'&&!d.online)return false;if(iotFilter.online==='offline'&&d.online)return false;return true})}
+function showIotLogs(idx){const d=filterIot()[idx];if(!d)return;document.getElementById('iotLogTitle').textContent=d.deviceName+' · 设备日志';
+document.getElementById('iotLogBody').innerHTML='<ul style="margin:0;padding-left:18px;line-height:1.8">'+d.logs.map(l=>'<li>'+l+'</li>').join('')+'</ul>';
+document.getElementById('iotLogModal').classList.add('show')}
+function closeIotLog(){document.getElementById('iotLogModal').classList.remove('show')}
+function renderEcIotPage(){const rows=filterIot(),onlineN=rows.filter(d=>d.online).length;
+let h=`<div class="card"><h2>养老物联设备</h2><p class="page-desc">展示用户绑定的<strong>门磁、跌倒探测仪、烟雾报警器</strong>等居家设备在线状态与设备日志。</p>
+<div class="filter"><input placeholder="用户名" oninput="iotFilter.userName=this.value" value="${iotFilter.userName.replace(/"/g,'&quot;')}">
+<input placeholder="手机号" oninput="iotFilter.userPhone=this.value" value="${iotFilter.userPhone.replace(/"/g,'&quot;')}">
+<select onchange="iotFilter.deviceType=this.value"><option value="">全部类型</option><option ${iotFilter.deviceType==='门磁'?'selected':''}>门磁</option><option ${iotFilter.deviceType==='跌倒探测仪'?'selected':''}>跌倒探测仪</option><option ${iotFilter.deviceType==='烟雾报警器'?'selected':''}>烟雾报警器</option></select>
+<select onchange="iotFilter.online=this.value"><option value="">全部状态</option><option value="online" ${iotFilter.online==='online'?'selected':''}>在线</option><option value="offline" ${iotFilter.online==='offline'?'selected':''}>离线</option></select>
+<button class="btn" onclick="render()">查询</button></div>${renderActions(PAGES['/elder-care/iot'].actions||[])}
+<table><thead><tr><th>用户名</th><th>手机号</th><th>设备类型</th><th>设备名称</th><th>设备编号</th><th>在线状态</th><th>最近在线</th><th>操作</th></tr></thead><tbody>`;
+rows.forEach((d,i)=>{h+=`<tr><td>${d.userName}</td><td>${d.userPhone}</td><td>${d.deviceType}</td><td>${d.deviceName}</td><td>${d.deviceSn}</td><td><span class="tag ${d.online?'tag-ok':'tag-danger'}">${d.online?'在线':'离线'}</span></td><td>${d.lastOnline}</td><td><button class="link-btn" onclick="showIotLogs(${i})">设备日志</button></td></tr>`});
+return h+`</tbody></table><div class="pager">共 ${rows.length} 台 · 在线 ${onlineN} 台</div></div>`}
+function renderUserListTable(){let h='<table><thead><tr><th><input type="checkbox"></th><th>姓名</th><th>手机</th><th>设备号</th><th>状态</th><th>操作</th></tr></thead><tbody>';
+USER_SAMPLES.forEach(u=>{const dev=deviceLabel(u.deviceId);const devCls=dev==='未绑定'?'device-muted':'';h+=`<tr><td><input type="checkbox"></td><td><button class="user-link" onclick="openUserDetail(${u.id})">${u.name}</button></td><td>${u.phone}</td><td class="${devCls}">${dev}</td><td><span class="tag ${statusTag(u.status)}">${u.status}</span></td><td>`;
+if(can('view'))h+=`<button class="link-btn" onclick="openUserDetail(${u.id})">查看详情</button>`;
+if(can('update'))h+=`<button class="link-btn" onclick="openUserEdit(${u.id})">编辑资料</button>`;
+if(can('update'))h+=`<button class="link-btn link-danger" onclick="toggleUserStatus(${u.id})">${u.status==='禁用'?'启用':'禁用'}</button>`;
+h+='</td></tr>'});h+=`</tbody></table><div class="pager">共 ${USER_SAMPLES.length} 条 · 上一页 1 下一页</div>`;return h}
+function renderDetailGrid(pairs){return`<div class="detail-grid">${pairs.map(([l,v])=>`<div class="lbl">${l}</div><div class="val">${v}</div>`).join('')}</div>`}
+function renderDetailTable(cols,rows,empty){if(!rows.length)return`<p class="empty-tip">${empty}</p>`;let h='<table class="detail-table"><thead><tr>';cols.forEach(c=>h+=`<th>${c}</th>`);h+='</tr></thead><tbody>';rows.forEach(r=>{h+='<tr>';r.forEach(c=>h+=`<td>${c}</td>`);h+='</tr>'});return h+'</tbody></table>'}
+function openUserDetail(id){const u=USER_SAMPLES.find(x=>x.id===id);if(!u)return;detailUserId=id;
+document.getElementById('userDrawerTitle').textContent=u.name+' · 用户档案';
+document.getElementById('drawerEditBtn').style.display=can('update')?'inline-block':'none';
+const h=u.habits;
+const ecRows=u.emergencyContacts.map((c,i)=>[i+1,c.name||'—',c.relation||'—',c.phone||'—',c.priority,(c.name||c.phone)?(c.notifySos?'<span class="tag tag-danger">是</span>':'<span class="tag tag-off">否</span>'):'—']);
+document.getElementById('userDrawerBody').innerHTML=`
+<div class="detail-sec"><h4>基本信息</h4>${renderDetailGrid([['姓名',u.name],['手机',u.phone],['设备号',deviceLabel(u.deviceId)],['年龄',u.age+'岁'],['性别',u.gender],['状态',`<span class="tag ${statusTag(u.status)}">${u.status}</span>`],['注册',u.registerAt]])}</div>
+<div class="detail-sec"><h4>习惯与健康档案</h4>${renderDetailGrid([['身高',h.height],['体重',h.weight],['血型',h.bloodType],['作息',h.sleepTime],['运动',h.exercise],['饮食',h.diet],['慢性病',h.chronic||'无']])}</div>
+<div class="detail-sec"><h4>用药习惯</h4>${renderDetailTable(['药品','剂量','时间','备注'],u.medications.map(m=>[m.name,m.dose,m.schedule,m.note]),'未设置用药')}</div>
+<div class="detail-sec"><h4>各类提醒</h4>${renderDetailTable(['类型','内容','规则','状态'],u.reminders.map(r=>[r.type,r.content,r.repeat,r.enabled?'<span class="tag tag-ok">开启</span>':'<span class="tag tag-off">关闭</span>']),'未设置提醒')}</div>
+<div class="detail-sec"><h4>紧急联系人（3位）</h4>${renderDetailTable(['#','姓名','关系','电话','优先级','呼救'],ecRows,'—')}</div>`;
+document.getElementById('userDrawer').classList.add('show')}
+function closeUserDetail(){document.getElementById('userDrawer').classList.remove('show');detailUserId=null}
+function openUserEditFromDrawer(){closeUserDetail();if(detailUserId)openUserEdit(detailUserId)}
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function renderUserEditForm(u){
+  const hb=u.habits;
+  let meds=u.medications.map((m,i)=>`<div class="edit-sub" data-med="${i}"><div class="edit-grid" style="grid-template-columns:2fr 1fr 2fr 1fr auto">
+    <div class="form-row"><label>药品</label><input data-f="med-name" value="${esc(m.name)}"></div>
+    <div class="form-row"><label>剂量</label><input data-f="med-dose" value="${esc(m.dose)}"></div>
+    <div class="form-row"><label>时间</label><input data-f="med-schedule" value="${esc(m.schedule)}"></div>
+    <div class="form-row"><label>备注</label><input data-f="med-note" value="${esc(m.note)}"></div>
+    <button type="button" class="link-btn link-danger" onclick="removeMedRow(this)">删</button></div></div>`).join('');
+  let rems=u.reminders.map((r,i)=>`<div class="edit-sub" data-rem="${i}"><div class="form-row-inline">
+    <select data-f="rem-type"><option ${r.type==='用药'?'selected':''}>用药</option><option ${r.type==='运动'?'selected':''}>运动</option><option ${r.type==='饮水'?'selected':''}>饮水</option><option ${r.type==='复诊'?'selected':''}>复诊</option></select>
+    <input data-f="rem-content" value="${esc(r.content)}" placeholder="内容" style="flex:1;min-width:120px">
+    <input data-f="rem-repeat" value="${esc(r.repeat)}" placeholder="规则" style="width:100px">
+    <label><input type="checkbox" data-f="rem-enabled" ${r.enabled?'checked':''}> 开启</label>
+    <button type="button" class="link-btn link-danger" onclick="removeRemRow(this)">删</button></div></div>`).join('');
+  let ecs=u.emergencyContacts.map((c,i)=>`<div class="edit-contact" data-ec="${i}"><div class="ct-label">联系人 ${i+1}</div><div class="edit-grid">
+    <div class="form-row"><label>姓名</label><input data-f="ec-name" value="${esc(c.name)}"></div>
+    <div class="form-row"><label>关系</label><input data-f="ec-relation" value="${esc(c.relation)}"></div>
+    <div class="form-row"><label>电话</label><input data-f="ec-phone" value="${esc(c.phone)}"></div>
+    <div class="form-row"><label>优先级</label><select data-f="ec-priority"><option value="主联系人" ${c.priority==='主联系人'?'selected':''}>主联系人</option><option value="备用" ${c.priority==='备用'?'selected':''}>备用</option></select></div>
+    <div class="form-row"><label>呼救通知</label><input type="checkbox" data-f="ec-sos" ${c.notifySos?'checked':''}></div></div></div>`).join('');
+  return `<div class="edit-sec"><h4>基本信息</h4><div class="edit-grid">
+    <div class="form-row"><label>姓名</label><input id="ef-name" value="${esc(u.name)}"></div>
+    <div class="form-row"><label>手机</label><input id="ef-phone" value="${esc(u.phone)}"></div>
+    <div class="form-row"><label>设备号</label><input id="ef-deviceId" value="${esc(u.deviceId)}"></div>
+    <div class="form-row"><label>状态</label><select id="ef-status"><option value="正常" ${u.status==='正常'?'selected':''}>正常</option><option value="禁用" ${u.status==='禁用'?'selected':''}>禁用</option></select></div>
+    <div class="form-row"><label>年龄</label><input id="ef-age" type="number" value="${u.age}"></div>
+    <div class="form-row"><label>性别</label><select id="ef-gender"><option value="男" ${u.gender==='男'?'selected':''}>男</option><option value="女" ${u.gender==='女'?'selected':''}>女</option></select></div></div></div>
+  <div class="edit-sec"><h4>习惯与健康档案</h4><div class="edit-grid">
+    <div class="form-row"><label>身高</label><input id="ef-height" value="${esc(hb.height)}"></div>
+    <div class="form-row"><label>体重</label><input id="ef-weight" value="${esc(hb.weight)}"></div>
+    <div class="form-row"><label>血型</label><input id="ef-blood" value="${esc(hb.bloodType)}"></div>
+    <div class="form-row"><label>作息</label><input id="ef-sleep" value="${esc(hb.sleepTime)}"></div>
+    <div class="form-row"><label>运动</label><input id="ef-exercise" value="${esc(hb.exercise)}"></div>
+    <div class="form-row"><label>饮食</label><input id="ef-diet" value="${esc(hb.diet)}"></div>
+    <div class="form-row" style="grid-column:1/-1"><label>慢性病</label><input id="ef-chronic" value="${esc(hb.chronic)}"></div></div></div>
+  <div class="edit-sec"><h4>用药习惯 <button type="button" class="link-btn" onclick="addMedRow()">+ 添加</button></h4><div id="medList">${meds||'<p class="empty-tip">暂无，可添加</p>'}</div></div>
+  <div class="edit-sec"><h4>各类提醒 <button type="button" class="link-btn" onclick="addRemRow()">+ 添加</button></h4><div id="remList">${rems||'<p class="empty-tip">暂无，可添加</p>'}</div></div>
+  <div class="edit-sec"><h4>紧急联系人（固定3位）</h4>${ecs}</div>`;
+}
+function openUserEdit(id){if(!can('update')){toast('当前角色无权编辑');return}const u=USER_SAMPLES.find(x=>x.id===id);if(!u)return;editingUserId=id;editSnapshot=cloneUser(u);
+document.getElementById('userEditTitle').textContent='编辑档案 · '+u.name;
+document.getElementById('userEditBody').innerHTML=renderUserEditForm(cloneUser(u));
+document.getElementById('userEditModal').classList.add('show')}
+function closeUserEdit(){document.getElementById('userEditModal').classList.remove('show');editingUserId=null;editSnapshot=null}
+function resetUserEdit(){if(editingUserId&&editSnapshot){document.getElementById('userEditBody').innerHTML=renderUserEditForm(cloneUser(editSnapshot));toast('已恢复为打开时的内容')}}
+function addMedRow(){const el=document.getElementById('medList');if(el.querySelector('.empty-tip'))el.innerHTML='';el.insertAdjacentHTML('beforeend',`<div class="edit-sub"><div class="edit-grid" style="grid-template-columns:2fr 1fr 2fr 1fr auto"><div class="form-row"><label>药品</label><input data-f="med-name"></div><div class="form-row"><label>剂量</label><input data-f="med-dose"></div><div class="form-row"><label>时间</label><input data-f="med-schedule"></div><div class="form-row"><label>备注</label><input data-f="med-note"></div><button type="button" class="link-btn link-danger" onclick="removeMedRow(this)">删</button></div></div>`)}
+function removeMedRow(btn){btn.closest('.edit-sub').remove()}
+function addRemRow(){const el=document.getElementById('remList');if(el.querySelector('.empty-tip'))el.innerHTML='';el.insertAdjacentHTML('beforeend',`<div class="edit-sub"><div class="form-row-inline"><select data-f="rem-type"><option>用药</option><option>运动</option><option>饮水</option><option>复诊</option></select><input data-f="rem-content" placeholder="内容" style="flex:1"><input data-f="rem-repeat" placeholder="规则" style="width:100px"><label><input type="checkbox" data-f="rem-enabled" checked> 开启</label><button type="button" class="link-btn link-danger" onclick="removeRemRow(this)">删</button></div></div>`)}
+function removeRemRow(btn){btn.closest('.edit-sub').remove()}
+function collectUserEdit(){const u=USER_SAMPLES.find(x=>x.id===editingUserId);if(!u)return null;
+const meds=[...document.querySelectorAll('#medList .edit-sub')].map(row=>({name:row.querySelector('[data-f=med-name]')?.value||'',dose:row.querySelector('[data-f=med-dose]')?.value||'',schedule:row.querySelector('[data-f=med-schedule]')?.value||'',note:row.querySelector('[data-f=med-note]')?.value||''})).filter(m=>m.name.trim()||m.dose.trim());
+const rems=[...document.querySelectorAll('#remList .edit-sub')].map(row=>({type:row.querySelector('[data-f=rem-type]')?.value||'用药',content:row.querySelector('[data-f=rem-content]')?.value||'',repeat:row.querySelector('[data-f=rem-repeat]')?.value||'',enabled:row.querySelector('[data-f=rem-enabled]')?.checked}));
+const ecs=[...document.querySelectorAll('.edit-contact')].map(row=>({name:row.querySelector('[data-f=ec-name]')?.value||'',relation:row.querySelector('[data-f=ec-relation]')?.value||'',phone:row.querySelector('[data-f=ec-phone]')?.value||'',priority:row.querySelector('[data-f=ec-priority]')?.value||'备用',notifySos:row.querySelector('[data-f=ec-sos]')?.checked}));
+return{id:u.id,name:document.getElementById('ef-name').value.trim(),phone:document.getElementById('ef-phone').value.trim(),deviceId:document.getElementById('ef-deviceId').value.trim()||'—',status:document.getElementById('ef-status').value,age:+document.getElementById('ef-age').value||0,gender:document.getElementById('ef-gender').value,registerAt:u.registerAt,
+habits:{height:document.getElementById('ef-height').value,weight:document.getElementById('ef-weight').value,bloodType:document.getElementById('ef-blood').value,sleepTime:document.getElementById('ef-sleep').value,exercise:document.getElementById('ef-exercise').value,diet:document.getElementById('ef-diet').value,chronic:document.getElementById('ef-chronic').value},
+medications:meds,reminders:rems,emergencyContacts:padEc(ecs)}}
+function saveUserEdit(){const data=collectUserEdit();if(!data)return;if(!data.name||!data.phone){toast('请填写姓名和手机号');return}
+const idx=USER_SAMPLES.findIndex(x=>x.id===data.id);if(idx>=0)USER_SAMPLES[idx]=cloneUser(data);closeUserEdit();toast('用户档案已保存');render()}
+document.getElementById('userEditModal').addEventListener('click',e=>{if(e.target.id==='userEditModal')closeUserEdit()});
+function filterMemoirQ(){const k=memoirQbKw.trim();return memoirQuestions.filter(q=>{if(memoirQbCat&&q.category!==memoirQbCat)return false;if(!k)return true;return String(q.id).includes(k)||q.content.includes(k)||q.category.includes(k)})}
+function renderMemoirQbPage(){const all=filterMemoirQ(),ps=20,start=(memoirQbPage-1)*ps,rows=all.slice(start,start+ps);
+let h=`<div class="card"><h2>回忆录问题库</h2><p class="page-desc">预设 <strong>${MEMOIR_Q_TOTAL}</strong> 道采集题，支持新增、编辑、删除及 <strong>Word 批量导入</strong>。</p>
+<div class="filter"><input id="mqKw" placeholder="题号/题目/分类" value="${memoirQbKw.replace(/"/g,'&quot;')}" oninput="memoirQbKw=this.value">
+<select id="mqCat" onchange="memoirQbCat=this.value;memoirQbPage=1;render()"><option value="">全部分类</option>${MEMOIR_CATS.map(c=>`<option value="${c}" ${memoirQbCat===c?'selected':''}>${c}</option>`).join('')}</select>
+<button class="btn" onclick="memoirQbPage=1;render();toast('共 '+filterMemoirQ().length+' 题')">查询</button></div>
+${renderActions(PAGES['/memoir/question-bank'].actions||[])}
+<p style="font-size:13px;color:#64748b;margin-bottom:12px">库内共 <b style="color:#1677ff">${memoirQuestions.length}</b> 题</p>
+<table><thead><tr><th>题号</th><th>分类</th><th>题目</th><th>状态</th><th>操作</th></tr></thead><tbody>`;
+rows.forEach(q=>{h+=`<tr><td>${q.id}</td><td>${q.category}</td><td class="summary-cell" title="${q.content.replace(/"/g,'&quot;')}">${q.content}</td><td>${q.enabled?'启用':'停用'}</td><td>${can('update')?`<button class="link-btn" onclick="toast('编辑第${q.id}题（演示）')">编辑</button>`:''}${can('delete')?`<button class="link-btn link-danger" onclick="if(confirm('删除?')){memoirQuestions=memoirQuestions.filter(x=>x.id!==${q.id});render()}">删除</button>`:''}</td></tr>`});
+h+=`</tbody></table><div class="pager">共 ${all.length} 条 · 第 ${memoirQbPage} 页 <button class="btn" onclick="if(memoirQbPage>1){memoirQbPage--;render()}">上一页</button> <button class="btn" onclick="if(start+ps<all.length){memoirQbPage++;render()}">下一页</button></div></div>`;return h}
+function matchMemoirExport(u){const k=memoirExportFilter.trim();if(!k)return true;return u.userName.includes(k)||u.phone.includes(k)}
+function exportMemoirUsersCsv(){const users=MEMOIR_USERS.filter(matchMemoirExport);if(!users.length){toast('无匹配用户');return}toast('已导出 '+users.length+' 位用户全部回答（CSV演示）')}
+function renderMemoirManagePage(){const k=memoirManageKw.trim();const users=k?MEMOIR_USERS.filter(u=>u.userName.includes(k)||u.phone.includes(k)):MEMOIR_USERS;
+let h=`<div class="card"><h2>个人回忆录管理</h2><p class="page-desc">「导出用户筛选」列可筛选要导出全部回答的用户；勾选后点击导出。</p>
+<div class="filter"><input placeholder="列表筛选：手机号/用户名" value="${memoirManageKw.replace(/"/g,'&quot;')}" oninput="memoirManageKw=this.value"><button class="btn" onclick="render();toast('查询')">查询</button>
+<button class="btn btn-export" onclick="exportMemoirUsersCsv()">导出所选用户全部回答</button></div>
+${renderActions(PAGES['/users/memoir'].actions||[])}
+<table><thead><tr><th><input type="checkbox" onchange="document.querySelectorAll('.memoir-exp-chk').forEach(c=>{if(matchMemoirExport(MEMOIR_USERS.find(u=>u.id==+c.dataset.id)))c.checked=this.checked})"></th>
+<th>导出用户筛选<br><input placeholder="用户名/手机" style="width:100px;font-size:12px" value="${memoirExportFilter.replace(/"/g,'&quot;')}" oninput="memoirExportFilter=this.value;render()"></th><th>用户</th><th>手机</th><th>回忆录标题</th><th>答题进度/状态</th><th>最近更新</th><th>操作</th></tr></thead><tbody>`;
+users.forEach(u=>{const p=memoirPct(u.answered),ok=matchMemoirExport(u);
+h+=`<tr><td><input type="checkbox" class="memoir-exp-chk" data-id="${u.id}" ${ok?'checked':''} ${ok?'':'disabled'}></td><td>${ok?'<span class="tag tag-ok">可导出</span>':'—'}</td><td><button class="user-link" onclick="navigate('/users/memoir/answers/${u.id}')">${u.userName}</button></td><td>${u.phone}</td><td>${u.title}</td><td><div>${u.answered}/${MEMOIR_Q_TOTAL}（${p}%）</div><div class="progress-bar"><i style="width:${p}%"></i></div><span class="tag ${u.status==='已完成'?'tag-ok':'tag-warn'}">${u.status}</span></td><td>${u.updatedAt}</td><td><button class="link-btn" onclick="navigate('/users/memoir/answers/${u.id}')">查看回答</button></td></tr>`});
+return h+'</tbody></table></div>'}
+function toggleMemoirExpand(id){if(memoirExpandedIds.has(id))memoirExpandedIds.delete(id);else memoirExpandedIds.add(id);render()}
+function exportMemoirFiltered(){toast('已导出当前筛选 '+filterMemoirAnsRows().length+' 题（CSV演示）')}
+function filterMemoirAnsRows(){const u=getMemoirUser(memoirAnswersUserId);if(!u)return [];return memoirQuestions.map(q=>({q,essence:getAnswerEssence(u,q)})).filter(row=>{
+if(memoirAnsCat&&row.q.category!==memoirAnsCat)return false;if(memoirAnsFilter==='answered'&&!row.essence)return false;if(memoirAnsFilter==='unanswered'&&row.essence)return false;return true})}
+function renderMemoirAnswersPage(){const u=getMemoirUser(memoirAnswersUserId);if(!u)return '<div class="card">用户不存在</div>';
+const ps=15,all=filterMemoirAnsRows(),start=(memoirAnsPage-1)*ps,rows=all.slice(start,start+ps);
+const cats=[...new Set(memoirQuestions.map(q=>q.category))];
+let h=`<div class="card"><button class="btn" onclick="navigate('/users/memoir')">← 返回列表</button><h2>${u.userName} · 回答精要</h2>
+<p class="page-desc">支持按<strong>问题分类</strong>筛选后导出；可展开查看完整精要。</p>
+<div class="filter"><select onchange="memoirAnsCat=this.value;memoirAnsPage=1;render()"><option value="">全部分类</option>${cats.map(c=>`<option value="${c}" ${memoirAnsCat===c?'selected':''}>${c}</option>`).join('')}</select>
+<select onchange="memoirAnsFilter=this.value;memoirAnsPage=1;render()"><option value="all">全部</option><option value="answered" ${memoirAnsFilter==='answered'?'selected':''}>已回答</option><option value="unanswered" ${memoirAnsFilter==='unanswered'?'selected':''}>未回答</option></select>
+<button class="btn" onclick="memoirExpandAll=!memoirExpandAll;memoirExpandedIds.clear();render()">${memoirExpandAll?'收起全部':'展开全部'}</button>
+<button class="btn btn-export" onclick="exportMemoirFiltered()">导出当前筛选</button></div>
+<p class="page-desc">共 ${all.length} 题</p>
+<table><thead><tr><th>题号</th><th>分类</th><th>题目</th><th>回答精要</th><th>字数</th></tr></thead><tbody>`;
+rows.forEach(({q,essence})=>{const exp=memoirExpandAll||memoirExpandedIds.has(q.id);
+let cell=essence?`<div class="${exp?'essence-full':'essence-clamp'}">${essence}</div>${essence.length>120?`<button class="link-btn" onclick="toggleMemoirExpand(${q.id})">${exp?'收起':'展开全文'}</button>`:''}`:'<span class="tag tag-off">未回答</span>';
+h+=`<tr><td>${q.id}</td><td>${q.category}</td><td class="summary-cell">${q.content}</td><td>${cell}</td><td>${essence?essence.length:'—'}</td></tr>`});
+return h+`</tbody></table><div class="pager"><button class="btn" onclick="if(memoirAnsPage>1){memoirAnsPage--;render()}">上一页</button> <button class="btn" onclick="if(start+ps<all.length){memoirAnsPage++;render()}">下一页</button></div></div>`}
+const ADMIN_ACCOUNTS=[
+  {id:1,account:'admin',name:'系统管理员',role:'super_admin',status:'正常',perms:['view','create','update','delete','export','audit']},
+  {id:2,account:'operator01',name:'运营-小王',role:'operator',status:'正常',perms:['view','create','update','export','audit']},
+  {id:3,account:'readonly01',name:'只读-小张',role:'readonly',status:'禁用',perms:['view']}
+];
+const PERM_LABELS=[{k:'view',l:'查看'},{k:'create',l:'新增'},{k:'update',l:'编辑'},{k:'delete',l:'删除'},{k:'export',l:'导出'},{k:'audit',l:'审核'}];
+function renderSysAccountPage(){let h=`<div class="card"><h2>账号权限管理</h2><p class="page-desc">状态列后展示权限列表，可编辑每项权限；支持禁用账号。</p>${renderActions(PAGES['/system/account'].actions||[])}
+<table><thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>状态</th><th>使用权限</th><th>操作</th></tr></thead><tbody>`;
+ADMIN_ACCOUNTS.forEach(a=>{const tags=PERM_LABELS.map(p=>`<span class="perm-tag ${a.perms.includes(p.k)?'on':''}">${p.l}</span>`).join('');
+h+=`<tr><td>${a.account}</td><td>${a.name}</td><td>${a.role}</td><td><span class="tag ${a.status==='正常'?'tag-ok':'tag-danger'}">${a.status}</span></td><td><div class="perm-tags">${tags}</div></td><td><button class="link-btn" onclick="toast('编辑权限（演示）')">编辑权限</button> <button class="link-btn link-danger" onclick="a.status=a.status==='正常'?'禁用':'正常';render();toast('已切换状态')">${a.status==='正常'?'禁用':'启用'}</button></td></tr>`});
+return h+'</tbody></table></div>'}
+function renderAccountSettingsPage(){return `<div class="card"><button class="btn" onclick="navigate('/dashboard')">← 返回</button><h2>账号设置</h2>
+<div class="detail-sec"><h4>基本信息</h4><div class="form-row"><label>登录账号</label><input value="admin" readonly></div><div class="form-row"><label>显示姓名</label><input value="演示管理员"></div><div class="form-row"><label>手机</label><input value="138****0001"></div><button class="btn btn-primary" onclick="toast('已保存')">保存</button></div>
+<div class="detail-sec"><h4>修改密码</h4><div class="form-row"><label>当前密码</label><input type="password"></div><div class="form-row"><label>新密码</label><input type="password"></div><button class="btn btn-primary" onclick="toast('密码已修改')">确认修改</button></div>
+<div class="detail-sec"><h4>登录设备记录</h4><table><thead><tr><th>时间</th><th>设备</th><th>IP</th><th>状态</th></tr></thead><tbody>
+<tr><td>2026-05-28 11:20</td><td>Chrome · macOS</td><td>192.168.1.108</td><td><span class="tag tag-ok">当前</span></td></tr>
+<tr><td>2026-05-27 09:15</td><td>Safari · iPhone</td><td>10.0.0.52</td><td>历史</td></tr></tbody></table></div></div>`}
+function renderTable(cols,rows){let h='<table><thead><tr><th><input type="checkbox"></th>';cols.forEach(c=>h+=`<th>${c}</th>`);if(rows)h+='<th>操作</th>';h+='</tr></thead><tbody>';for(let i=1;i<=5;i++){h+='<tr><td><input type="checkbox"></td>';cols.forEach(c=>h+=`<td>${c}示例${i}</td>`);if(rows){h+='<td>';if(can('update'))h+='<button class="link-btn" onclick="document.getElementById(\'modal\').classList.add(\'show\')">编辑</button>';if(can('delete'))h+='<button class="link-btn link-danger">删除</button>';if(can('view'))h+='<button class="link-btn">预览</button>';h+='</td>'}h+='</tr>'}h+='</tbody></table><div class="pager">共 100 条 · 上一页 1 2 3 下一页</div>';return h}
+function renderMain(){const el=document.getElementById('main');const pg=path==='/users/memoir-answers'?PAGES['/users/memoir-answers']:(PAGES[path]||PAGES['/dashboard']);let h=`<div class="breadcrumb">${breadcrumb()}</div>`;
+if(pg.type==='dash'){h+=`<div class="card"><h2>首页控制台 · 数据总览</h2>${renderActions(DASH_ACTIONS)}
+<div class="stats"><div class="stat"><div>用户总量</div><div class="num">12,580</div></div><div class="stat"><div>今日对话量</div><div class="num">8,426</div></div><div class="stat"><div>问卷采集完成率</div><div class="num">76.4%</div></div><div class="stat"><div>呼救记录(月)</div><div class="num">23</div></div></div>
+<div class="dash-grid"><div class="card"><b>近7日对话量趋势</b><div class="chart">图表区域（演示）</div></div><div class="card"><b>待办告警</b><ul class="alert-list"><li class="danger">10:32 紧急呼救 · 张**</li><li class="warn">09:15 待审核知识点 12条</li><li>昨日 异常登录 2次</li></ul></div></div></div>`}
+else if(pg.config&&pg.fields){h+=`<div class="card"><h2>${pg.title}</h2>${renderActions(pg.actions||[])}`;pg.fields.forEach(f=>{const[l,v]=f.split('|');h+=`<div class="form-row"><label>${l}</label><input value="${v}" readonly></div>`});h+='</div>'}
+else if(pg.type==='userList'){h+=`<div class="card"><h2>${pg.title}</h2><div class="filter"><input placeholder="姓名 / 手机 / 设备号"><button class="btn" onclick="toast('查询中')">查询</button><button class="btn" onclick="toast('筛选中')">筛选</button></div>${renderActions(pg.actions||[])}${renderUserListTable()}</div>`}
+else if(pg.type==='shortQa'){h+=`<div class="card"><h2>${pg.title}</h2><p class="page-desc">储存用户<strong>当前对话记忆</strong>，每次对话结束后重新生成，约为 <strong>2000 字</strong> 摘要。</p>${renderArchiveFilter()}${renderActions(pg.actions||[])}${renderShortQaTable()}</div>`}
+else if(pg.type==='chatArchive'){h+=`<div class="card"><h2>${pg.title}</h2><p class="page-desc">按<strong>对话段</strong>归档：一段沟通结束后，内容将<strong>压缩为摘要</strong>入库。</p>${renderArchiveFilter()}${renderActions(pg.actions||[])}${renderChatArchiveTable()}</div>`}
+else if(pg.type==='memoirQb'){h+=renderMemoirQbPage();if(can('create'))setTimeout(()=>{document.querySelectorAll('.toolbar .btn').forEach(btn=>{if(btn.textContent.includes('Word'))btn.onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='.doc,.docx';inp.onchange=()=>{for(let i=0;i<20;i++)memoirQuestions.push({id:memoirQuestions.length+1,category:'导入题目',content:'【Word导入】批量题目',enabled:true});toast('已导入20题');render()};inp.click()};if(btn.textContent.includes('新增题目'))btn.onclick=()=>{memoirQuestions.push({id:memoirQuestions.length+1,category:'童年记忆',content:'【新增】请补充回忆。',enabled:true});toast('已新增');render()}})},0)}
+else if(path==='/users/memoir-answers'){h+=renderMemoirAnswersPage()}
+else if(pg.type==='memoirManage'){h+=renderMemoirManagePage()}
+else if(pg.type==='kbAudit'){h+=renderKbAuditPage()}
+else if(pg.type==='ecFamily'){h+=renderEcFamilyPage()}
+else if(pg.type==='ecMessage'){h+=renderEcMessagePage()}
+else if(pg.type==='ecCommunity'){h+=renderEcCommunityPage()}
+else if(pg.type==='ecIot'){h+=renderEcIotPage()}
+else if(pg.type==='voiceDialog'){h+=renderVoiceDialogPage()}
+else if(pg.type==='aiMemory'){h+=renderAiMemoryPage()}
+else if(pg.type==='sysAccount'){h+=renderSysAccountPage()}
+else if(pg.type==='accountSettings'){h+=renderAccountSettingsPage()}
+else{h+=`<div class="card"><h2>${pg.title}</h2><div class="filter"><input placeholder="搜索"><button class="btn" onclick="toast('查询中')">查询</button><button class="btn" onclick="toast('筛选中')">筛选</button>${pg.date?'<input type="date"> 至 <input type="date">':''}</div>${renderActions(pg.actions||[])}${renderTable(pg.cols,pg.rows)}</div>`}
+el.innerHTML=h}
+function render(){renderMenu();renderMain()}
+render();
+</script>
+</body>
+</html>
