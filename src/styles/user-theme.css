@@ -1,0 +1,33 @@
+/* 用户端：大字号、高对比、适老化 */
+:root {
+  --user-primary: #2b7de9;
+  --user-primary-light: #e8f3ff;
+  --user-warm: #ff8c42;
+  --user-safe: #52c41a;
+  --user-danger: #ff4d4f;
+  --user-bg: #f5f7fa;
+  --user-card: #ffffff;
+  --user-text: #1a1a1a;
+  --user-text-secondary: #666;
+  --user-radius: 16px;
+  --user-tab-h: 64px;
+  --user-font-base: 17px;
+  --user-font-lg: 20px;
+  --user-font-xl: 24px;
+  --user-touch-min: 48px;
+}
+
+.user-app {
+  font-size: var(--user-font-base);
+  color: var(--user-text);
+  background: var(--user-bg);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+.user-card {
+  background: var(--user-card);
+  border-radius: var(--user-radius);
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}

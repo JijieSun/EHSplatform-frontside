@@ -1,0 +1,23 @@
+{
+  "name": "companion-robot-user-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "小伴 · 情感陪伴机器人用户端 App（老年用户移动端）",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "element-plus": "^2.9.0",
+    "tesseract.js": "^5.1.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.3"
+  }
+}
