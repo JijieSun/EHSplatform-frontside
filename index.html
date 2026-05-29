@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小伴 · 情感陪伴机器人用户 App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;background:linear-gradient(160deg,#e8f4ff,#f5f7fa 50%,#fff8f0);color:#1a1a1a;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{max-width:420px;width:100%;background:#fff;border-radius:24px;padding:40px 32px;text-align:center;box-shadow:0 16px 48px rgba(43,125,233,.12)}
+.logo{width:80px;height:80px;margin:0 auto 20px;border-radius:50%;background:linear-gradient(145deg,#2b7de9,#69b1ff);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 8px 24px rgba(43,125,233,.35)}
+h1{font-size:26px;margin-bottom:6px}
+.sub{color:#666;font-size:15px;margin-bottom:28px;line-height:1.6}
+.btn{display:block;width:100%;padding:16px;border-radius:14px;font-size:17px;font-weight:600;text-decoration:none;margin-bottom:12px;cursor:pointer;border:none}
+.btn-primary{background:linear-gradient(145deg,#2b7de9,#69b1ff);color:#fff;box-shadow:0 6px 20px rgba(43,125,233,.35)}
+.btn-secondary{background:#f5f7fa;color:#2b7de9;border:2px solid #2b7de9}
+.note{margin-top:20px;font-size:13px;color:#999;line-height:1.8}
+.tag{display:inline-block;background:#e8f3ff;color:#2b7de9;font-size:12px;padding:4px 12px;border-radius:20px;margin-bottom:16px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🤖</div>
+  <span class="tag">老年用户移动端 · 适老化设计</span>
+  <h1>小伴 · 情感陪伴机器人</h1>
+  <p class="sub">语音聊天 · 回忆录采集 · 养老守护 · 家人留言<br>5 Tab 用户 App，与管理后台独立</p>
+  <a class="btn btn-primary" href="app/dist/index.html">打开用户 App</a>
+  <a class="btn btn-secondary" href="预览/小伴用户App.html">预览文件夹入口</a>
+  <p class="note">
+    开发模式：进入 <b>app</b> 文件夹，运行 <b>npm install && npm run dev</b><br>
+    直接双击打开需先执行 <b>npm run build</b> 生成 dist<br>
+    本项目为<b>用户端 App</b>，管理后台请使用「情感机器人管理后台」项目
+  </p>
+</div>
+</body>
+</html>
